@@ -80,6 +80,7 @@
   .empty { color: var(--hint); font-size: 15px; padding: 4px 0; }
   .total { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; color: var(--hint); }
   .total b { color: var(--fg); }
+  .hint { font-size: 12px; color: var(--hint); margin: 6px 2px 0; }
   .note { font-size: 12px; color: var(--hint); line-height: 1.5; padding: 0 4px; }
 
   @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -99,6 +100,7 @@
   <div class="card top">
     <label for="g">XP за игру</label>
     <input id="g" type="number" inputmode="decimal" step="any" min="1">
+    <div class="hint">сколько XP за игру ты получаешь после штрафа (молния XP Overload на нике)</div>
 
     <div class="row">
       <div><label for="r">Ранг сейчас</label><input id="r" type="number" inputmode="numeric" min="1" max="40"></div>
@@ -139,12 +141,28 @@
     return t > nowMs ? t - 7 * DAY : t;
   }
 
-  // Недельный бонус: пул 5000 XP. Пока за неделю набрано < 4500 XP, игра даёт x4,
-  // от 4500 до 7500 x2, дальше x1 (бонус кончился).
+  // Недельный множитель (по данным сообщества, у Valve точных чисел нет):
+  // за неделю набрано < 4500 XP: x4 (бонус), 4500-7500: x2, 7500-11167: x1 (бонус кончился),
+  // от 11167: x0,175 (XP Overload, штраф). Сброс в среду.
+  const OVERLOAD_FROM = 11167;
+  const OVERLOAD_MULT = 0.175;
   function bonusMultiplier(weekXp) {
     if (weekXp < 4500) return 4;
     if (weekXp < 7500) return 2;
-    return 1;
+    if (weekXp < OVERLOAD_FROM) return 1;
+    return OVERLOAD_MULT;
+  }
+
+  // Сколько XP в среднем набирается за обычную неделю, начиная с понедельного сброса
+  function typicalWeekXp(xpPerGame, step, weeklyBonus) {
+    let weekXp = 0;
+    let xp = 0;
+    for (let t = 0; t < 7 * DAY; t += step) {
+      const gain = xpPerGame * (weeklyBonus ? bonusMultiplier(weekXp) : 1);
+      weekXp += gain;
+      xp += gain;
+    }
+    return xp;
   }
 
   // o: now, endMs, rank, xpInRank, medalLevel, xpPerGame, minPerGame, hoursPerDay,
@@ -186,10 +204,11 @@
       }
     }
     const gamesPerDay = (hoursPerDay * 60) / (o.minPerGame);
-    return { results, games, xp, xpPerDay: gamesPerDay * o.xpPerGame, gamesPerDay, levelsByEnd: level - (o.medalLevel || 0) };
+    const xpPerDay = typicalWeekXp(o.xpPerGame, step, o.weeklyBonus) / 7;
+    return { results, games, xp, xpPerDay, gamesPerDay, levelsByEnd: level - (o.medalLevel || 0) };
   }
 
-  return { simulate, lastReset, bonusMultiplier, XP_PER_RANK, TO_RANK_40, DAY, MIN };
+  return { simulate, lastReset, bonusMultiplier, OVERLOAD_FROM, OVERLOAD_MULT, XP_PER_RANK, TO_RANK_40, DAY, MIN };
 });
 
 </script>
@@ -250,7 +269,7 @@
   }
 
   el('logo').innerHTML = icon('#4285f4', 28);
-  el('g').value = param('g', 49);
+  el('g').value = param('g', 50);
   el('r').value = param('r', 1);
   el('x').value = param('x', 0);
 
@@ -281,7 +300,7 @@
       rank: rank,
       xpInRank: xpIn,
       medalLevel: medalLevel,
-      xpPerGame: num('g', 0),
+      xpPerGame: num('g', 0) / XpCalc.OVERLOAD_MULT, // введён XP после штрафа, внутри считаем базу
       minPerGame: MIN_PER_GAME,
       hoursPerDay: HOURS_PER_DAY,
       weeklyBonus: true,
@@ -300,7 +319,7 @@
     el('summary').innerHTML =
       '<div class="tiles">' +
         '<div class="tile"><div class="v">' + Math.round(r.gamesPerDay) + '</div><div class="k">игр в сутки</div></div>' +
-        '<div class="tile"><div class="v">~' + fmt(r.xpPerDay) + '</div><div class="k">XP в сутки (без бонуса)</div></div>' +
+        '<div class="tile"><div class="v">~' + fmt(r.xpPerDay) + '</div><div class="k">XP в сутки (в среднем)</div></div>' +
       '</div>' +
       '<div class="prog"><div class="top"><span>До 40 ранга</span><span><b>' + fmt(left) + '</b> XP</span></div>' +
       '<div class="bar"><i style="width:' + pct.toFixed(1) + '%"></i></div></div>';
@@ -343,8 +362,8 @@
 
   el('note').textContent =
     'Даты примерные. Считается, что играешь без остановки, примерно раз в ' + (Math.round(MIN_PER_GAME * 10) / 10) +
-    ' мин, и каждую неделю получаешь бонусный XP (пул 5000, сброс в среду). ' +
-    'Следующая медаль это снова 195 000 XP с первого ранга. Медали выдаются за календарный год.';
+    ' мин. Учтены недельный бонус (x4 и x2 в начале недели) и штраф XP Overload (x0,175 после ~11 167 XP за неделю), сброс в среду. ' +
+    'XP за игру впиши такой, какой получаешь после штрафа, а бонус в начале недели я добавлю сам. Следующая медаль это снова 195 000 XP с первого ранга. Медали выдаются за календарный год.';
   renderDropdown();
   render();
 })();
