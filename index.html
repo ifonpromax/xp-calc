@@ -11,60 +11,111 @@
     --fg: var(--tg-theme-text-color, #e8eaed);
     --hint: var(--tg-theme-hint-color, #8b949e);
     --card: var(--tg-theme-secondary-bg-color, #1a2027);
+    --line: rgba(128, 128, 128, .22);
+    --accent: #3b82f6;
+    --green: #34a853;
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; padding: 16px 16px 32px; background: var(--bg); color: var(--fg);
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; padding: 18px 16px 40px; background: var(--bg); color: var(--fg);
          font: 16px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; }
-  h1 { font-size: 20px; margin: 0 0 12px; }
-  .card { background: var(--card); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
-  label { display: block; font-size: 13px; color: var(--hint); margin: 12px 0 4px; }
+  .wrap { max-width: 520px; margin: 0 auto; }
+
+  .head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; flex: none;
+          background: linear-gradient(135deg, rgba(59,130,246,.28), rgba(52,168,83,.22)); border: 1px solid var(--line); }
+  h1 { font-size: 21px; line-height: 1.15; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+  .sub { font-size: 13px; color: var(--hint); margin-top: 2px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 12px;
+          position: relative; animation: rise .35s ease both; }
+  .card.top { z-index: 10; }
+  .h2 { font-size: 12px; color: var(--hint); text-transform: uppercase; letter-spacing: .08em; margin: 0 0 10px; font-weight: 600; }
+
+  label { display: block; font-size: 13px; color: var(--hint); margin: 14px 0 6px; }
   label:first-child { margin-top: 0; }
-  input[type=number] { width: 100%; padding: 10px 12px; font-size: 16px; color: var(--fg);
-         background: var(--bg); border: 1px solid rgba(128,128,128,.35); border-radius: 8px; }
+  input[type=number] { width: 100%; padding: 12px 14px; font-size: 17px; font-weight: 600; color: var(--fg);
+         background: var(--bg); border: 1px solid var(--line); border-radius: 12px; outline: none;
+         transition: border-color .15s, box-shadow .15s; -moz-appearance: textfield; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,.25); }
   .row { display: flex; gap: 10px; }
-  .row > div { flex: 1; }
-  .big { font-size: 15px; color: var(--hint); }
-  .big b { color: var(--fg); }
-  .lvl { display: flex; justify-content: space-between; align-items: center; gap: 12px;
-         padding: 10px 0; border-top: 1px solid rgba(128,128,128,.25); }
-  .lvl:first-child { border-top: 0; }
-  .lvl .name { display: flex; align-items: center; gap: 10px; font-weight: 600; }
-  .lvl .when { color: var(--hint); font-size: 14px; text-align: right; }
+  .row > div { flex: 1; min-width: 0; }
+
   .dd { position: relative; }
-  .ddbtn, .dditem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; font-size: 16px;
-         color: var(--fg); background: var(--bg); border: 1px solid rgba(128,128,128,.35); border-radius: 8px;
-         text-align: left; cursor: pointer; }
-  .ddbtn::after { content: "▾"; margin-left: auto; color: var(--hint); }
-  .ddlist { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); background: var(--bg);
-         border: 1px solid rgba(128,128,128,.45); border-radius: 8px; overflow: hidden;
-         box-shadow: 0 8px 24px rgba(0,0,0,.35); }
-  .dditem { border: 0; border-radius: 0; border-top: 1px solid rgba(128,128,128,.2); }
+  .ddbtn, .dditem { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; font-size: 16px; font-weight: 600;
+         color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; text-align: left; cursor: pointer;
+         font-family: inherit; transition: border-color .15s, background .15s; }
+  .ddbtn:active, .ddbtn:focus-visible { border-color: var(--accent); }
+  .ddbtn::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid var(--hint); border-bottom: 2px solid var(--hint);
+         transform: rotate(45deg) translateY(-2px); transition: transform .2s; }
+  .ddbtn.open::after { transform: rotate(-135deg) translateY(-2px); }
+  .ddlist { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 6px); background: var(--card);
+         border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 14px 34px rgba(0,0,0,.45); }
+  .ddlist:not([hidden]) { animation: pop .16s ease both; }
+  .dditem { border: 0; border-radius: 0; border-top: 1px solid var(--line); background: transparent; }
   .dditem:first-child { border-top: 0; }
-  .note { font-size: 12px; color: var(--hint); }
+  .dditem:active { background: rgba(128,128,128,.14); }
+  .dditem.sel { background: rgba(59,130,246,.12); }
+
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tile { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .tile .v { font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
+  .tile .k { font-size: 12px; color: var(--hint); margin-top: 2px; }
+
+  .prog { margin-top: 14px; }
+  .prog .top { display: flex; justify-content: space-between; font-size: 13px; color: var(--hint); margin-bottom: 7px; }
+  .prog .top b { color: var(--fg); }
+  .bar { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; border-radius: 99px; transition: width .5s ease;
+             background: linear-gradient(90deg, var(--accent), var(--green)); }
+
+  .item { display: flex; align-items: center; gap: 14px; padding: 12px 0; position: relative; }
+  .item + .item::before { content: ""; position: absolute; left: 23px; top: -12px; height: 24px; width: 2px; background: var(--line); }
+  .ico { width: 48px; height: 48px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--bg); border: 2px solid; }
+  .item .mid { flex: 1; min-width: 0; }
+  .item .nm { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .item .dt { font-size: 14px; color: var(--hint); margin-top: 1px; }
+  .tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: rgba(59,130,246,.18); color: #8db8ff; }
+  .pill { flex: none; font-size: 13px; font-weight: 600; padding: 5px 11px; border-radius: 99px; background: rgba(128,128,128,.16); }
+  .empty { color: var(--hint); font-size: 15px; padding: 4px 0; }
+  .total { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; color: var(--hint); }
+  .total b { color: var(--fg); }
+  .note { font-size: 12px; color: var(--hint); line-height: 1.5; padding: 0 4px; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>
-<h1>Калькулятор медали</h1>
-
-<div class="card">
-  <label for="g">XP за игру</label>
-  <input id="g" type="number" inputmode="decimal" step="any" min="1">
-
-  <div class="row">
-    <div><label for="r">Ранг сейчас</label><input id="r" type="number" inputmode="numeric" min="1" max="40"></div>
-    <div><label for="x">XP</label><input id="x" type="number" inputmode="numeric" min="0" max="4999"></div>
+<div class="wrap">
+  <div class="head">
+    <div class="logo" id="logo"></div>
+    <div>
+      <h1>Калькулятор медали</h1>
+      <div class="sub" id="year"></div>
+    </div>
   </div>
 
-  <label>Уровень медали</label>
-  <div class="dd">
-    <button type="button" class="ddbtn" id="ddBtn"></button>
-    <div class="ddlist" id="ddList" hidden></div>
+  <div class="card top">
+    <label for="g">XP за игру</label>
+    <input id="g" type="number" inputmode="decimal" step="any" min="1">
+
+    <div class="row">
+      <div><label for="r">Ранг сейчас</label><input id="r" type="number" inputmode="numeric" min="1" max="40"></div>
+      <div><label for="x">XP</label><input id="x" type="number" inputmode="numeric" min="0" max="4999"></div>
+    </div>
+
+    <label>Уровень медали</label>
+    <div class="dd">
+      <button type="button" class="ddbtn" id="ddBtn"></button>
+      <div class="ddlist" id="ddList" hidden></div>
+    </div>
   </div>
+
+  <div class="card" id="summary"></div>
+  <div class="card" id="levels"></div>
+  <p class="note" id="note"></p>
 </div>
-
-<div class="card" id="summary"></div>
-<div class="card" id="levels"></div>
-<p class="note" id="note"></p>
 
 <script>
 // Калькулятор сервисной медали CS2. Один и тот же код работает и в боте, и в мини-приложении.
@@ -174,7 +225,7 @@
     size = size || 24;
     if (!color) {
       return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7" fill="none" ' +
-             'stroke="#8b949e" stroke-width="1.5" stroke-dasharray="3 3"/></svg>';
+             'stroke="#8b949e" stroke-width="1.6" stroke-dasharray="3 3"/></svg>';
     }
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24">' +
       '<path d="M6.5 1.5h4l3 8h-4z" fill="' + color + '" opacity=".6"/>' +
@@ -185,14 +236,20 @@
 
   function renderDropdown() {
     var m = MEDALS[medalLevel];
-    el('ddBtn').innerHTML = icon(m.color) + '<span>' + m.name + '</span>';
+    el('ddBtn').innerHTML = icon(m.color, 26) + '<span>' + m.name + '</span>';
     var html = '';
     MEDALS.forEach(function (x) {
-      html += '<button type="button" class="dditem" data-lvl="' + x.lvl + '">' + icon(x.color) + '<span>' + x.name + '</span></button>';
+      html += '<button type="button" class="dditem' + (x.lvl === medalLevel ? ' sel' : '') + '" data-lvl="' + x.lvl + '">' +
+              icon(x.color, 26) + '<span>' + x.name + '</span></button>';
     });
     el('ddList').innerHTML = html;
   }
+  function setOpen(open) {
+    el('ddList').hidden = !open;
+    if (el('ddBtn').classList) el('ddBtn').classList.toggle('open', open);
+  }
 
+  el('logo').innerHTML = icon('#4285f4', 28);
   el('g').value = param('g', 49);
   el('r').value = param('r', 1);
   el('x').value = param('x', 0);
@@ -210,15 +267,19 @@
     return 'через ' + (Math.round(d * 10) / 10) + ' дн.';
   }
   function medals(n) { return n === 1 ? 'медаль' : n < 5 ? 'медали' : 'медалей'; }
+  function fmt(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
   function render() {
     var now = Date.now();
     var year = new Date(now).getUTCFullYear();
+    el('year').textContent = 'Сервисная медаль, до 31 декабря ' + year;
+    var rank = Math.min(40, Math.max(1, num('r', 1)));
+    var xpIn = Math.max(0, num('x', 0));
     var o = {
       now: now,
       endMs: Date.UTC(year, 11, 31, 23, 59, 59),
-      rank: Math.min(40, Math.max(1, num('r', 1))),
-      xpInRank: Math.max(0, num('x', 0)),
+      rank: rank,
+      xpInRank: xpIn,
       medalLevel: medalLevel,
       xpPerGame: num('g', 0),
       minPerGame: MIN_PER_GAME,
@@ -228,26 +289,36 @@
     };
     var r = XpCalc.simulate(o);
     if (r.error) {
-      el('summary').innerHTML = '<span class="big">Впиши XP за игру.</span>';
+      el('summary').innerHTML = '<div class="empty">Впиши XP за игру, и я посчитаю.</div>';
       el('levels').innerHTML = '';
       return;
     }
-    el('summary').innerHTML =
-      '<div class="big">Игр в сутки: <b>' + Math.round(r.gamesPerDay) + '</b></div>' +
-      '<div class="big">XP в сутки (без бонуса): <b>~' + Math.round(r.xpPerDay).toLocaleString('ru-RU') + '</b></div>';
 
-    var html = '';
+    var done = rank >= 40 ? XpCalc.TO_RANK_40 : (rank - 1) * XpCalc.XP_PER_RANK + xpIn;
+    var left = Math.max(0, XpCalc.TO_RANK_40 - done);
+    var pct = Math.min(100, Math.max(0, done / XpCalc.TO_RANK_40 * 100));
+    el('summary').innerHTML =
+      '<div class="tiles">' +
+        '<div class="tile"><div class="v">' + Math.round(r.gamesPerDay) + '</div><div class="k">игр в сутки</div></div>' +
+        '<div class="tile"><div class="v">~' + fmt(r.xpPerDay) + '</div><div class="k">XP в сутки (без бонуса)</div></div>' +
+      '</div>' +
+      '<div class="prog"><div class="top"><span>До 40 ранга</span><span><b>' + fmt(left) + '</b> XP</span></div>' +
+      '<div class="bar"><i style="width:' + pct.toFixed(1) + '%"></i></div></div>';
+
+    var html = '<div class="h2">Когда получишь</div>';
     if (medalLevel >= 6) {
-      html = '<span class="big">У тебя уже максимальная медаль года (красная).</span>';
+      html += '<div class="empty">У тебя уже максимальная медаль года (красная).</div>';
     } else if (!r.results.length) {
-      html = '<span class="big">До конца ' + year + ' года при таких параметрах следующую медаль не получить.</span>';
+      html += '<div class="empty">До конца ' + year + ' года при таких параметрах следующую медаль не получить.</div>';
     } else {
-      r.results.forEach(function (x) {
+      r.results.forEach(function (x, i) {
         var m = MEDALS[Math.min(x.level, 6)];
-        html += '<div class="lvl"><div class="name">' + icon(m.color, 28) + '<span>' + m.name + '</span></div>' +
-                '<div class="when">' + when(x.at) + '<br>' + inText(x.at, now) + '</div></div>';
+        html += '<div class="item"><div class="ico" style="border-color:' + m.color + ';box-shadow:0 0 18px ' + m.color + '40">' + icon(m.color, 30) + '</div>' +
+                '<div class="mid"><div class="nm">' + m.name + (i === 0 ? ' <span class="tag">ближайшая</span>' : '') + '</div>' +
+                '<div class="dt">' + when(x.at) + '</div></div>' +
+                '<div class="pill">' + inText(x.at, now) + '</div></div>';
       });
-      html += '<div class="big" style="margin-top:8px">До конца ' + year + ' года: ' + r.results.length + ' ' + medals(r.results.length) + '</div>';
+      html += '<div class="total">До конца ' + year + ' года: <b>' + r.results.length + ' ' + medals(r.results.length) + '</b></div>';
     }
     el('levels').innerHTML = html;
   }
@@ -257,17 +328,17 @@
     el(id).addEventListener('change', render);
   });
 
-  el('ddBtn').addEventListener('click', function () { el('ddList').hidden = !el('ddList').hidden; });
+  el('ddBtn').addEventListener('click', function () { setOpen(el('ddList').hidden); });
   el('ddList').addEventListener('click', function (e) {
     var t = e.target && e.target.closest ? e.target.closest('[data-lvl]') : null;
     if (!t) return;
     medalLevel = parseInt(t.getAttribute('data-lvl'), 10) || 0;
-    el('ddList').hidden = true;
+    setOpen(false);
     renderDropdown();
     render();
   });
   document.addEventListener('click', function (e) {
-    if (e.target && e.target.closest && !e.target.closest('.dd')) el('ddList').hidden = true;
+    if (e.target && e.target.closest && !e.target.closest('.dd')) setOpen(false);
   });
 
   el('note').textContent =
