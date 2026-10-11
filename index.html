@@ -11,27 +11,35 @@
     --fg: var(--tg-theme-text-color, #e8eaed);
     --hint: var(--tg-theme-hint-color, #8b949e);
     --card: var(--tg-theme-secondary-bg-color, #1a2027);
-    --accent: var(--tg-theme-button-color, #3b82f6);
   }
   * { box-sizing: border-box; }
   body { margin: 0; padding: 16px 16px 32px; background: var(--bg); color: var(--fg);
          font: 16px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; }
   h1 { font-size: 20px; margin: 0 0 12px; }
   .card { background: var(--card); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
-  label { display: block; font-size: 13px; color: var(--hint); margin: 10px 0 4px; }
+  label { display: block; font-size: 13px; color: var(--hint); margin: 12px 0 4px; }
   label:first-child { margin-top: 0; }
   input[type=number] { width: 100%; padding: 10px 12px; font-size: 16px; color: var(--fg);
          background: var(--bg); border: 1px solid rgba(128,128,128,.35); border-radius: 8px; }
   .row { display: flex; gap: 10px; }
   .row > div { flex: 1; }
-  .check { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--fg); font-size: 15px; }
   .big { font-size: 15px; color: var(--hint); }
-  .lvl { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  .big b { color: var(--fg); }
+  .lvl { display: flex; justify-content: space-between; align-items: center; gap: 12px;
          padding: 10px 0; border-top: 1px solid rgba(128,128,128,.25); }
-  .lvl:first-of-type { border-top: 0; }
-  .lvl b { font-size: 16px; }
-  .lvl span { color: var(--hint); font-size: 14px; text-align: right; }
-  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+  .lvl:first-child { border-top: 0; }
+  .lvl .name { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .lvl .when { color: var(--hint); font-size: 14px; text-align: right; }
+  .dd { position: relative; }
+  .ddbtn, .dditem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; font-size: 16px;
+         color: var(--fg); background: var(--bg); border: 1px solid rgba(128,128,128,.35); border-radius: 8px;
+         text-align: left; cursor: pointer; }
+  .ddbtn::after { content: "▾"; margin-left: auto; color: var(--hint); }
+  .ddlist { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); background: var(--bg);
+         border: 1px solid rgba(128,128,128,.45); border-radius: 8px; overflow: hidden;
+         box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .dditem { border: 0; border-radius: 0; border-top: 1px solid rgba(128,128,128,.2); }
+  .dditem:first-child { border-top: 0; }
   .note { font-size: 12px; color: var(--hint); }
 </style>
 </head>
@@ -39,21 +47,19 @@
 <h1>Калькулятор медали 2026</h1>
 
 <div class="card">
-  <div class="row">
-    <div><label for="g">XP за игру</label><input id="g" type="number" inputmode="decimal" step="any" min="1"></div>
-    <div><label for="m">Минут на игру</label><input id="m" type="number" inputmode="decimal" step="any" min="1"></div>
-  </div>
-  <div class="row">
-    <div><label for="h">Часов игры в сутки</label><input id="h" type="number" inputmode="decimal" step="any" min="1" max="24"></div>
-    <div><label for="lvl">Уже есть уровней медали</label><input id="lvl" type="number" inputmode="numeric" min="0" max="5"></div>
-  </div>
+  <label for="g">XP за игру</label>
+  <input id="g" type="number" inputmode="decimal" step="any" min="1">
+
   <div class="row">
     <div><label for="r">Ранг сейчас</label><input id="r" type="number" inputmode="numeric" min="1" max="40"></div>
-    <div><label for="x">XP в этом ранге</label><input id="x" type="number" inputmode="numeric" min="0" max="4999"></div>
+    <div><label for="x">XP</label><input id="x" type="number" inputmode="numeric" min="0" max="4999"></div>
   </div>
-  <label for="w">Набрано XP с последней среды</label>
-  <input id="w" type="number" inputmode="numeric" min="0">
-  <div class="check"><input id="bonus" type="checkbox" checked><label for="bonus" style="margin:0;color:inherit;font-size:15px">Учитывать еженедельный бонус</label></div>
+
+  <label>Уровень медали</label>
+  <div class="dd">
+    <button type="button" class="ddbtn" id="ddBtn"></button>
+    <div class="ddlist" id="ddList" hidden></div>
+  </div>
 </div>
 
 <div class="card" id="summary"></div>
@@ -146,19 +152,50 @@
     var v = parseFloat(q.get(name));
     return isFinite(v) ? v : fallback;
   }
-  var COLORS = [
-    ['серый', '#9aa0a6'], ['зелёный', '#34a853'], ['синий', '#4285f4'],
-    ['фиолетовый', '#a142f4'], ['розовый', '#ec4899'], ['красный', '#ea4335']
-  ];
   function el(id) { return document.getElementById(id); }
 
+  // Скрытые настройки: минуты между играми и XP за неделю бот передаёт сам, иначе берутся обычные значения
+  var MIN_PER_GAME = param('m', 10.8);
+  var WEEK_XP = param('w', 0);
+  var HOURS_PER_DAY = 24;
+
+  var MEDALS = [
+    { lvl: 0, name: 'Нет медали', color: null },
+    { lvl: 1, name: 'Серая', color: '#c3c7cc' },
+    { lvl: 2, name: 'Зелёная', color: '#34a853' },
+    { lvl: 3, name: 'Синяя', color: '#4285f4' },
+    { lvl: 4, name: 'Фиолетовая', color: '#a142f4' },
+    { lvl: 5, name: 'Розовая', color: '#ec4899' },
+    { lvl: 6, name: 'Красная', color: '#ea4335' }
+  ];
+  var medalLevel = 0;
+
+  function icon(color, size) {
+    size = size || 24;
+    if (!color) {
+      return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7" fill="none" ' +
+             'stroke="#8b949e" stroke-width="1.5" stroke-dasharray="3 3"/></svg>';
+    }
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24">' +
+      '<path d="M6.5 1.5h4l3 8h-4z" fill="' + color + '" opacity=".6"/>' +
+      '<path d="M17.5 1.5h-4l-3 8h4z" fill="' + color + '" opacity=".85"/>' +
+      '<circle cx="12" cy="15" r="7.5" fill="' + color + '"/>' +
+      '<circle cx="12" cy="15" r="4.6" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/></svg>';
+  }
+
+  function renderDropdown() {
+    var m = MEDALS[medalLevel];
+    el('ddBtn').innerHTML = icon(m.color) + '<span>' + m.name + '</span>';
+    var html = '';
+    MEDALS.forEach(function (x) {
+      html += '<button type="button" class="dditem" data-lvl="' + x.lvl + '">' + icon(x.color) + '<span>' + x.name + '</span></button>';
+    });
+    el('ddList').innerHTML = html;
+  }
+
   el('g').value = param('g', 49);
-  el('m').value = param('m', 10.8);
-  el('h').value = 24;
-  el('lvl').value = 0;
   el('r').value = param('r', 1);
   el('x').value = param('x', 0);
-  el('w').value = param('w', 0);
 
   function num(id, fallback) {
     var v = parseFloat(el(id).value);
@@ -172,6 +209,7 @@
     if (d < 1) return 'через ' + Math.max(1, Math.round(d * 24)) + ' ч';
     return 'через ' + (Math.round(d * 10) / 10) + ' дн.';
   }
+  function medals(n) { return n === 1 ? 'медаль' : n < 5 ? 'медали' : 'медалей'; }
 
   function render() {
     var now = Date.now();
@@ -181,47 +219,62 @@
       endMs: Date.UTC(year, 11, 31, 23, 59, 59),
       rank: Math.min(40, Math.max(1, num('r', 1))),
       xpInRank: Math.max(0, num('x', 0)),
-      medalLevel: Math.min(5, Math.max(0, num('lvl', 0))),
+      medalLevel: medalLevel,
       xpPerGame: num('g', 0),
-      minPerGame: num('m', 0),
-      hoursPerDay: num('h', 24),
-      weeklyBonus: el('bonus').checked,
-      weekXp: Math.max(0, num('w', 0))
+      minPerGame: MIN_PER_GAME,
+      hoursPerDay: HOURS_PER_DAY,
+      weeklyBonus: true,
+      weekXp: Math.max(0, WEEK_XP)
     };
     var r = XpCalc.simulate(o);
     if (r.error) {
-      el('summary').innerHTML = '<span class="big">Впиши XP за игру и минуты на игру.</span>';
+      el('summary').innerHTML = '<span class="big">Впиши XP за игру.</span>';
       el('levels').innerHTML = '';
       return;
     }
-    var perDay = Math.round(r.xpPerDay).toLocaleString('ru-RU');
     el('summary').innerHTML =
-      '<div class="big">Игр в сутки: <b style="color:var(--fg)">' + Math.round(r.gamesPerDay) + '</b></div>' +
-      '<div class="big">XP в сутки (без бонуса): <b style="color:var(--fg)">~' + perDay + '</b></div>';
+      '<div class="big">Игр в сутки: <b>' + Math.round(r.gamesPerDay) + '</b></div>' +
+      '<div class="big">XP в сутки (без бонуса): <b>~' + Math.round(r.xpPerDay).toLocaleString('ru-RU') + '</b></div>';
 
     var html = '';
-    if (!r.results.length) {
-      html = '<span class="big">До конца ' + year + ' года при таких параметрах медаль не получить.</span>';
+    if (medalLevel >= 6) {
+      html = '<span class="big">У тебя уже максимальная медаль года (красная).</span>';
+    } else if (!r.results.length) {
+      html = '<span class="big">До конца ' + year + ' года при таких параметрах следующую медаль не получить.</span>';
     } else {
       r.results.forEach(function (x) {
-        var c = COLORS[Math.min(x.level, 6) - 1];
-        html += '<div class="lvl"><b><span class="dot" style="background:' + c[1] + '"></span>Уровень ' + x.level +
-                ' (' + c[0] + ')</b><span>' + when(x.at) + '<br>' + inText(x.at, now) + '</span></div>';
+        var m = MEDALS[Math.min(x.level, 6)];
+        html += '<div class="lvl"><div class="name">' + icon(m.color, 28) + '<span>' + m.name + '</span></div>' +
+                '<div class="when">' + when(x.at) + '<br>' + inText(x.at, now) + '</div></div>';
       });
-      html += '<div class="big" style="margin-top:8px">До конца ' + year + ' года: ' + r.results.length +
-              ' ' + (r.results.length === 1 ? 'уровень' : r.results.length < 5 ? 'уровня' : 'уровней') + '</div>';
+      html += '<div class="big" style="margin-top:8px">До конца ' + year + ' года: ' + r.results.length + ' ' + medals(r.results.length) + '</div>';
     }
     el('levels').innerHTML = html;
   }
 
-  ['g', 'm', 'h', 'lvl', 'r', 'x', 'w', 'bonus'].forEach(function (id) {
+  ['g', 'r', 'x'].forEach(function (id) {
     el(id).addEventListener('input', render);
     el(id).addEventListener('change', render);
   });
+
+  el('ddBtn').addEventListener('click', function () { el('ddList').hidden = !el('ddList').hidden; });
+  el('ddList').addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest('[data-lvl]') : null;
+    if (!t) return;
+    medalLevel = parseInt(t.getAttribute('data-lvl'), 10) || 0;
+    el('ddList').hidden = true;
+    renderDropdown();
+    render();
+  });
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && !e.target.closest('.dd')) el('ddList').hidden = true;
+  });
+
   el('note').textContent =
-    'Даты примерные. Бонус: пул 5000 XP в неделю, сброс в среду около 00:00 UTC (Valve может чуть отличаться). ' +
-    'Снижение XP за перегрузку (после ~11 000 XP в неделю) не считается: впиши XP за игру, который у тебя реально получается. ' +
-    'Следующий уровень медали это снова 195 000 XP с первого ранга, после сброса XP сверх 40-го ранга сгорает.';
+    'Даты примерные. Считается, что играешь без остановки, примерно раз в ' + (Math.round(MIN_PER_GAME * 10) / 10) +
+    ' мин, и каждую неделю получаешь бонусный XP (пул 5000, сброс в среду). ' +
+    'Следующая медаль это снова 195 000 XP с первого ранга. Медали выдаются за календарный год.';
+  renderDropdown();
   render();
 })();
 </script>
