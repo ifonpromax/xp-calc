@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Калькулятор медали CS2</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #0f1419);
+    --fg: var(--tg-theme-text-color, #e8eaed);
+    --hint: var(--tg-theme-hint-color, #8b949e);
+    --card: var(--tg-theme-secondary-bg-color, #1a2027);
+    --accent: var(--tg-theme-button-color, #3b82f6);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px 16px 32px; background: var(--bg); color: var(--fg);
+         font: 16px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  .card { background: var(--card); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; color: var(--hint); margin: 10px 0 4px; }
+  label:first-child { margin-top: 0; }
+  input[type=number] { width: 100%; padding: 10px 12px; font-size: 16px; color: var(--fg);
+         background: var(--bg); border: 1px solid rgba(128,128,128,.35); border-radius: 8px; }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  .check { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--fg); font-size: 15px; }
+  .big { font-size: 15px; color: var(--hint); }
+  .lvl { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+         padding: 10px 0; border-top: 1px solid rgba(128,128,128,.25); }
+  .lvl:first-of-type { border-top: 0; }
+  .lvl b { font-size: 16px; }
+  .lvl span { color: var(--hint); font-size: 14px; text-align: right; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+  .note { font-size: 12px; color: var(--hint); }
+</style>
+</head>
+<body>
+<h1>Калькулятор медали 2026</h1>
+
+<div class="card">
+  <div class="row">
+    <div><label for="g">XP за игру</label><input id="g" type="number" inputmode="decimal" step="any" min="1"></div>
+    <div><label for="m">Минут на игру</label><input id="m" type="number" inputmode="decimal" step="any" min="1"></div>
+  </div>
+  <div class="row">
+    <div><label for="h">Часов игры в сутки</label><input id="h" type="number" inputmode="decimal" step="any" min="1" max="24"></div>
+    <div><label for="lvl">Уже есть уровней медали</label><input id="lvl" type="number" inputmode="numeric" min="0" max="5"></div>
+  </div>
+  <div class="row">
+    <div><label for="r">Ранг сейчас</label><input id="r" type="number" inputmode="numeric" min="1" max="40"></div>
+    <div><label for="x">XP в этом ранге</label><input id="x" type="number" inputmode="numeric" min="0" max="4999"></div>
+  </div>
+  <label for="w">Набрано XP с последней среды</label>
+  <input id="w" type="number" inputmode="numeric" min="0">
+  <div class="check"><input id="bonus" type="checkbox" checked><label for="bonus" style="margin:0;color:inherit;font-size:15px">Учитывать еженедельный бонус</label></div>
+</div>
+
+<div class="card" id="summary"></div>
+<div class="card" id="levels"></div>
+<p class="note" id="note"></p>
+
+<script>
+// Калькулятор сервисной медали CS2. Один и тот же код работает и в боте, и в мини-приложении.
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.XpCalc = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  const XP_PER_RANK = 5000;
+  const TO_RANK_40 = 39 * XP_PER_RANK; // с 1-го до 40-го ранга: 195 000 XP
+  const MIN = 60000;
+  const DAY = 86400000;
+  const MAX_MEDAL_LEVEL = 6;
+
+  // Последний недельный сброс (по умолчанию среда, 00:00 UTC). Точное время у Valve может чуть отличаться.
+  function lastReset(nowMs, resetDow, resetHour) {
+    const dow = resetDow === undefined ? 3 : resetDow;
+    const hour = resetHour === undefined ? 0 : resetHour;
+    const d = new Date(nowMs);
+    const back = (d.getUTCDay() - dow + 7) % 7;
+    const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hour) - back * DAY;
+    return t > nowMs ? t - 7 * DAY : t;
+  }
+
+  // Недельный бонус: пул 5000 XP. Пока за неделю набрано < 4500 XP, игра даёт x4,
+  // от 4500 до 7500 x2, дальше x1 (бонус кончился).
+  function bonusMultiplier(weekXp) {
+    if (weekXp < 4500) return 4;
+    if (weekXp < 7500) return 2;
+    return 1;
+  }
+
+  // o: now, endMs, rank, xpInRank, medalLevel, xpPerGame, minPerGame, hoursPerDay,
+  //    weeklyBonus, weekXp, resetDow, resetHour
+  function simulate(o) {
+    const hoursPerDay = Math.min(24, Math.max(0.5, o.hoursPerDay || 24));
+    const step = ((o.minPerGame * 24) / hoursPerDay) * MIN; // средний шаг между играми с учётом перерывов
+    const resetDow = o.resetDow === undefined ? 3 : o.resetDow;
+    const resetHour = o.resetHour === undefined ? 0 : o.resetHour;
+    let nextReset = lastReset(o.now, resetDow, resetHour) + 7 * DAY;
+    let weekXp = o.weekXp || 0;
+    let toGo = Math.max(0, (40 - o.rank) * XP_PER_RANK - (o.rank >= 40 ? 0 : o.xpInRank));
+    let level = o.medalLevel || 0;
+    let t = o.now;
+    let games = 0;
+    let xp = 0;
+    const results = [];
+
+    if (!(o.xpPerGame > 0) || !(o.minPerGame > 0)) return { results, games, xp, error: 'bad input' };
+
+    if (toGo <= 0 && level < MAX_MEDAL_LEVEL) {
+      level += 1;
+      results.push({ level, at: t, games, xp });
+      toGo = TO_RANK_40;
+    }
+    while (level < MAX_MEDAL_LEVEL) {
+      t += step;
+      if (t > o.endMs) break;
+      while (t >= nextReset) { weekXp = 0; nextReset += 7 * DAY; }
+      const gain = o.xpPerGame * (o.weeklyBonus ? bonusMultiplier(weekXp) : 1);
+      weekXp += gain;
+      toGo -= gain;
+      xp += gain;
+      games += 1;
+      if (toGo <= 0) {
+        level += 1;
+        results.push({ level, at: t, games, xp });
+        toGo = TO_RANK_40; // XP сверх 40-го ранга при сбросе сгорает
+      }
+    }
+    const gamesPerDay = (hoursPerDay * 60) / (o.minPerGame);
+    return { results, games, xp, xpPerDay: gamesPerDay * o.xpPerGame, gamesPerDay, levelsByEnd: level - (o.medalLevel || 0) };
+  }
+
+  return { simulate, lastReset, bonusMultiplier, XP_PER_RANK, TO_RANK_40, DAY, MIN };
+});
+
+</script>
+<script>
+(function () {
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+
+  var q = new URLSearchParams(location.search);
+  function param(name, fallback) {
+    var v = parseFloat(q.get(name));
+    return isFinite(v) ? v : fallback;
+  }
+  var COLORS = [
+    ['серый', '#9aa0a6'], ['зелёный', '#34a853'], ['синий', '#4285f4'],
+    ['фиолетовый', '#a142f4'], ['розовый', '#ec4899'], ['красный', '#ea4335']
+  ];
+  function el(id) { return document.getElementById(id); }
+
+  el('g').value = param('g', 49);
+  el('m').value = param('m', 10.8);
+  el('h').value = 24;
+  el('lvl').value = 0;
+  el('r').value = param('r', 1);
+  el('x').value = param('x', 0);
+  el('w').value = param('w', 0);
+
+  function num(id, fallback) {
+    var v = parseFloat(el(id).value);
+    return isFinite(v) ? v : fallback;
+  }
+  function when(ms) {
+    return new Date(ms).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  }
+  function inText(ms, now) {
+    var d = (ms - now) / XpCalc.DAY;
+    if (d < 1) return 'через ' + Math.max(1, Math.round(d * 24)) + ' ч';
+    return 'через ' + (Math.round(d * 10) / 10) + ' дн.';
+  }
+
+  function render() {
+    var now = Date.now();
+    var year = new Date(now).getUTCFullYear();
+    var o = {
+      now: now,
+      endMs: Date.UTC(year, 11, 31, 23, 59, 59),
+      rank: Math.min(40, Math.max(1, num('r', 1))),
+      xpInRank: Math.max(0, num('x', 0)),
+      medalLevel: Math.min(5, Math.max(0, num('lvl', 0))),
+      xpPerGame: num('g', 0),
+      minPerGame: num('m', 0),
+      hoursPerDay: num('h', 24),
+      weeklyBonus: el('bonus').checked,
+      weekXp: Math.max(0, num('w', 0))
+    };
+    var r = XpCalc.simulate(o);
+    if (r.error) {
+      el('summary').innerHTML = '<span class="big">Впиши XP за игру и минуты на игру.</span>';
+      el('levels').innerHTML = '';
+      return;
+    }
+    var perDay = Math.round(r.xpPerDay).toLocaleString('ru-RU');
+    el('summary').innerHTML =
+      '<div class="big">Игр в сутки: <b style="color:var(--fg)">' + Math.round(r.gamesPerDay) + '</b></div>' +
+      '<div class="big">XP в сутки (без бонуса): <b style="color:var(--fg)">~' + perDay + '</b></div>';
+
+    var html = '';
+    if (!r.results.length) {
+      html = '<span class="big">До конца ' + year + ' года при таких параметрах медаль не получить.</span>';
+    } else {
+      r.results.forEach(function (x) {
+        var c = COLORS[Math.min(x.level, 6) - 1];
+        html += '<div class="lvl"><b><span class="dot" style="background:' + c[1] + '"></span>Уровень ' + x.level +
+                ' (' + c[0] + ')</b><span>' + when(x.at) + '<br>' + inText(x.at, now) + '</span></div>';
+      });
+      html += '<div class="big" style="margin-top:8px">До конца ' + year + ' года: ' + r.results.length +
+              ' ' + (r.results.length === 1 ? 'уровень' : r.results.length < 5 ? 'уровня' : 'уровней') + '</div>';
+    }
+    el('levels').innerHTML = html;
+  }
+
+  ['g', 'm', 'h', 'lvl', 'r', 'x', 'w', 'bonus'].forEach(function (id) {
+    el(id).addEventListener('input', render);
+    el(id).addEventListener('change', render);
+  });
+  el('note').textContent =
+    'Даты примерные. Бонус: пул 5000 XP в неделю, сброс в среду около 00:00 UTC (Valve может чуть отличаться). ' +
+    'Снижение XP за перегрузку (после ~11 000 XP в неделю) не считается: впиши XP за игру, который у тебя реально получается. ' +
+    'Следующий уровень медали это снова 195 000 XP с первого ранга, после сброса XP сверх 40-го ранга сгорает.';
+  render();
+})();
+</script>
+</body>
+</html>
