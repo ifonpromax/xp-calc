@@ -238,10 +238,12 @@
     { lvl: 5, name: 'Розовая', color: '#ec4899' },
     { lvl: 6, name: 'Красная', color: '#ea4335' }
   ];
-  var medalLevel = 0;
+  var medalLevel = Math.min(6, Math.max(0, Math.round(param('lv', 0))));
 
-  function icon(color, size) {
-    size = size || 24;
+  // Картинки медалей: SteamDB хранит их по номеру предмета. 2026 год: 5270 (уровень 1) ... 5275 (уровень 6).
+  // Если картинка не загрузилась, показывается нарисованная иконка.
+  var MEDAL_BASE = { 2026: 5270 };
+  function svgIcon(color, size) {
     if (!color) {
       return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7" fill="none" ' +
              'stroke="#8b949e" stroke-width="1.6" stroke-dasharray="3 3"/></svg>';
@@ -252,14 +254,25 @@
       '<circle cx="12" cy="15" r="7.5" fill="' + color + '"/>' +
       '<circle cx="12" cy="15" r="4.6" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/></svg>';
   }
+  window.__fb = function (img, color, size) { img.outerHTML = svgIcon(color, size); };
+  function icon(color, size, lvl) {
+    size = size || 24;
+    var year = new Date().getUTCFullYear();
+    if (color && lvl >= 1 && MEDAL_BASE[year]) {
+      var url = 'https://www.steamdb.com/assets/images/skins/cs2/collectibles/' + year + '-service-medal--' + (MEDAL_BASE[year] + lvl - 1) + '.png';
+      return '<img src="' + url + '" width="' + size + '" height="' + size + '" alt="" style="object-fit:contain" ' +
+             'onerror="__fb(this,\'' + color + '\',' + size + ')">';
+    }
+    return svgIcon(color, size);
+  }
 
   function renderDropdown() {
     var m = MEDALS[medalLevel];
-    el('ddBtn').innerHTML = icon(m.color, 26) + '<span>' + m.name + '</span>';
+    el('ddBtn').innerHTML = icon(m.color, 30, m.lvl) + '<span>' + m.name + '</span>';
     var html = '';
     MEDALS.forEach(function (x) {
       html += '<button type="button" class="dditem' + (x.lvl === medalLevel ? ' sel' : '') + '" data-lvl="' + x.lvl + '">' +
-              icon(x.color, 26) + '<span>' + x.name + '</span></button>';
+              icon(x.color, 30, x.lvl) + '<span>' + x.name + '</span></button>';
     });
     el('ddList').innerHTML = html;
   }
@@ -268,7 +281,7 @@
     if (el('ddBtn').classList) el('ddBtn').classList.toggle('open', open);
   }
 
-  el('logo').innerHTML = icon('#4285f4', 28);
+  el('logo').innerHTML = icon('#4285f4', 32, 3);
   el('g').value = param('g', 50);
   el('r').value = param('r', 1);
   el('x').value = param('x', 0);
@@ -332,7 +345,7 @@
     } else {
       r.results.forEach(function (x, i) {
         var m = MEDALS[Math.min(x.level, 6)];
-        html += '<div class="item"><div class="ico" style="border-color:' + m.color + ';box-shadow:0 0 18px ' + m.color + '40">' + icon(m.color, 30) + '</div>' +
+        html += '<div class="item"><div class="ico" style="border-color:' + m.color + ';box-shadow:0 0 18px ' + m.color + '40">' + icon(m.color, 36, m.lvl) + '</div>' +
                 '<div class="mid"><div class="nm">' + m.name + (i === 0 ? ' <span class="tag">ближайшая</span>' : '') + '</div>' +
                 '<div class="dt">' + when(x.at) + '</div></div>' +
                 '<div class="pill">' + inText(x.at, now) + '</div></div>';
