@@ -3,121 +3,207 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
 <title>Калькулятор медали CS2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
-    --bg: var(--tg-theme-bg-color, #0f1419);
-    --fg: var(--tg-theme-text-color, #e8eaed);
-    --hint: var(--tg-theme-hint-color, #8b949e);
-    --card: var(--tg-theme-secondary-bg-color, #1a2027);
-    --line: rgba(128, 128, 128, .22);
-    --accent: #3b82f6;
-    --green: #34a853;
+    --bg0: #07090d;
+    --fg: #f4f7fb;
+    --fg2: rgba(236, 243, 252, .64);
+    --fg3: rgba(236, 243, 252, .42);
+    --blue: #0a84ff;
+    --green: #30d158;
+    --yellow: #ffd60a;
+    --r: 28px;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { margin: 0; padding: 18px 16px 40px; background: var(--bg); color: var(--fg);
-         font: 16px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .wrap { max-width: 520px; margin: 0 auto; }
+  html, body { background: var(--bg0); }
+  body {
+    margin: 0; padding: max(18px, env(safe-area-inset-top)) 16px 44px; color: var(--fg);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif;
+    font-size: 16px; line-height: 1.4; letter-spacing: -.011em; -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  .wrap { max-width: 520px; margin: 0 auto; position: relative; }
 
-  .head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-  .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; flex: none;
-          background: linear-gradient(135deg, rgba(59,130,246,.28), rgba(52,168,83,.22)); border: 1px solid var(--line); }
-  h1 { font-size: 21px; line-height: 1.15; margin: 0; font-weight: 700; letter-spacing: -.01em; }
-  .sub { font-size: 13px; color: var(--hint); margin-top: 2px; }
+  /* фон: тёмный градиент с мягкими цветными пятнами, которые просвечивают сквозь стекло */
+  .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden;
+        background: radial-gradient(1100px 650px at 15% -10%, #12203a 0%, transparent 60%), var(--bg0); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(72px); animation: float 20s ease-in-out infinite alternate; }
+  .b1 { width: 340px; height: 340px; left: -100px; top: -50px; background: #2f6bff; opacity: .55; }
+  .b2 { width: 300px; height: 300px; right: -120px; top: 300px; background: #22c55e; opacity: .36; animation-delay: -7s; }
+  .b3 { width: 330px; height: 330px; left: 12%; bottom: -140px; background: #a142f4; opacity: .42; animation-delay: -12s; }
+  @keyframes float { to { transform: translate3d(36px, -46px, 0) scale(1.14); } }
 
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 12px;
-          position: relative; animation: rise .35s ease both; }
+  /* жидкое стекло: размытие, лёгкий блик сверху и градиентная кромка */
+  .glass {
+    position: relative; border-radius: var(--r);
+    background: linear-gradient(140deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+    -webkit-backdrop-filter: blur(26px) saturate(175%); backdrop-filter: blur(26px) saturate(175%);
+    box-shadow: 0 22px 44px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.38), inset 0 -1px 0 rgba(255,255,255,.05);
+  }
+  .glass::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: linear-gradient(140deg, rgba(255,255,255,.6), rgba(255,255,255,.06) 34%, rgba(255,255,255,.03) 64%, rgba(255,255,255,.4));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+
+  .head { display: flex; align-items: center; gap: 14px; margin: 4px 2px 20px; }
+  .logo { width: 56px; height: 56px; border-radius: 19px; display: grid; place-items: center; flex: none; }
+  h1 { margin: 0; font-size: 27px; line-height: 1.1; font-weight: 800; letter-spacing: -.03em; }
+  .sub { margin-top: 3px; font-size: 14px; color: var(--fg2); }
+
+  .card { padding: 18px; margin-bottom: 14px; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; }
   .card.top { z-index: 10; }
-  .h2 { font-size: 12px; color: var(--hint); text-transform: uppercase; letter-spacing: .08em; margin: 0 0 10px; font-weight: 600; }
+  .card:nth-of-type(2) { animation-delay: .06s; } .card:nth-of-type(3) { animation-delay: .12s; }
 
-  label { display: block; font-size: 13px; color: var(--hint); margin: 14px 0 6px; }
-  label:first-child { margin-top: 0; }
-  input[type=number] { width: 100%; padding: 12px 14px; font-size: 17px; font-weight: 600; color: var(--fg);
-         background: var(--bg); border: 1px solid var(--line); border-radius: 12px; outline: none;
-         transition: border-color .15s, box-shadow .15s; -moz-appearance: textfield; }
-  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type=number]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,.25); }
-  .row { display: flex; gap: 10px; }
+  .lab { display: flex; align-items: center; gap: 7px; margin: 18px 0 8px; font-size: 13px; font-weight: 500; color: var(--fg2); }
+  .lab:first-child { margin-top: 0; }
+  .lab svg { color: var(--fg3); }
+  label { font: inherit; color: inherit; }
+  .row { display: flex; gap: 12px; }
   .row > div { flex: 1; min-width: 0; }
 
+  .inp {
+    width: 100%; padding: 14px 16px; font: 650 19px/1.2 inherit; font-family: inherit; color: var(--fg);
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 18px; outline: none;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.28); -moz-appearance: textfield;
+    transition: border-color .18s, box-shadow .18s, background .18s;
+  }
+  .inp::-webkit-inner-spin-button, .inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .inp:focus { background: rgba(255,255,255,.1); border-color: rgba(110,170,255,.85); box-shadow: 0 0 0 4px rgba(10,132,255,.28), inset 0 2px 4px rgba(0,0,0,.2); }
+  .hint { margin: 8px 3px 0; font-size: 12.5px; color: var(--fg3); line-height: 1.35; }
+
   .dd { position: relative; }
-  .ddbtn, .dditem { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; font-size: 16px; font-weight: 600;
-         color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; text-align: left; cursor: pointer;
-         font-family: inherit; transition: border-color .15s, background .15s; }
-  .ddbtn:active, .ddbtn:focus-visible { border-color: var(--accent); }
-  .ddbtn::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid var(--hint); border-bottom: 2px solid var(--hint);
-         transform: rotate(45deg) translateY(-2px); transition: transform .2s; }
-  .ddbtn.open::after { transform: rotate(-135deg) translateY(-2px); }
-  .ddlist { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 6px); background: var(--card);
-         border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 14px 34px rgba(0,0,0,.45); }
-  .ddlist:not([hidden]) { animation: pop .16s ease both; }
-  .dditem { border: 0; border-radius: 0; border-top: 1px solid var(--line); background: transparent; }
-  .dditem:first-child { border-top: 0; }
-  .dditem:active { background: rgba(128,128,128,.14); }
-  .dditem.sel { background: rgba(59,130,246,.12); }
+  .ddbtn {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; font: 600 17px/1.2 inherit; font-family: inherit;
+    color: var(--fg); text-align: left; cursor: pointer; border-radius: 20px;
+    background: linear-gradient(140deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
+    border: 1px solid rgba(255,255,255,.2);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 0 rgba(255,255,255,.04), 0 6px 16px rgba(0,0,0,.22);
+    transition: border-color .18s, background .18s, transform .12s;
+  }
+  .ddbtn:active { transform: scale(.985); }
+  .ddbtn.open { border-color: rgba(120,175,255,.9); box-shadow: 0 0 0 4px rgba(10,132,255,.26), inset 0 1px 0 rgba(255,255,255,.3); }
+  .ddbtn .chev { margin-left: auto; color: var(--fg3); }
 
-  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .tile { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
-  .tile .v { font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
-  .tile .k { font-size: 12px; color: var(--hint); margin-top: 2px; }
+  /* меню вынесено на верхний уровень страницы, чтобы стекло размывало всё, что под ним */
+  .ddlist {
+    position: fixed; z-index: 100; padding: 8px; border-radius: 30px; overflow-y: auto; overscroll-behavior: contain;
+    background: linear-gradient(150deg, rgba(255,255,255,.24), rgba(255,255,255,.09) 55%, rgba(255,255,255,.15));
+    -webkit-backdrop-filter: blur(38px) saturate(215%) brightness(1.06); backdrop-filter: blur(38px) saturate(215%) brightness(1.06);
+    box-shadow: 0 34px 80px rgba(0,0,0,.6), 0 8px 24px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.5), inset 0 -1px 0 rgba(255,255,255,.08);
+  }
+  .ddlist::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: linear-gradient(140deg, rgba(255,255,255,.7), rgba(255,255,255,.08) 34%, rgba(255,255,255,.04) 64%, rgba(255,255,255,.45));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .ddlist:not([hidden]) { animation: pop .24s cubic-bezier(.2,.9,.3,1.15) both; transform-origin: top center; }
+  .dditem {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 12px; margin: 0; font: 600 17px/1.2 inherit; font-family: inherit;
+    color: var(--fg); text-align: left; cursor: pointer; background: transparent; border: 0; border-radius: 22px; box-shadow: none;
+    transition: background .15s;
+  }
+  .dditem + .dditem { margin-top: 2px; }
+  .dditem:active { background: rgba(255,255,255,.16); }
+  .dditem.sel { background: rgba(255,255,255,.17); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 0 rgba(255,255,255,.05); }
+  .dditem .ck { margin-left: auto; color: #6cb2ff; opacity: 0; }
+  .dditem.sel .ck { opacity: 1; }
 
-  .prog { margin-top: 14px; }
-  .prog .top { display: flex; justify-content: space-between; font-size: 13px; color: var(--hint); margin-bottom: 7px; }
-  .prog .top b { color: var(--fg); }
-  .bar { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
-  .bar > i { display: block; height: 100%; width: 0; border-radius: 99px; transition: width .5s ease;
-             background: linear-gradient(90deg, var(--accent), var(--green)); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { padding: 14px 15px; border-radius: 22px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+  .tile .ti { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 12px; background: rgba(255,255,255,.08); margin-bottom: 10px; }
+  .tile .v { font-size: 27px; line-height: 1.05; font-weight: 750; letter-spacing: -.03em; }
+  .tile .k { margin-top: 3px; font-size: 12.5px; color: var(--fg2); }
 
-  .item { display: flex; align-items: center; gap: 14px; padding: 12px 0; position: relative; }
-  .item + .item::before { content: ""; position: absolute; left: 23px; top: -12px; height: 24px; width: 2px; background: var(--line); }
-  .ico { width: 48px; height: 48px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--bg); border: 2px solid; }
-  .item .mid { flex: 1; min-width: 0; }
-  .item .nm { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .item .dt { font-size: 14px; color: var(--hint); margin-top: 1px; }
-  .tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: rgba(59,130,246,.18); color: #8db8ff; }
-  .pill { flex: none; font-size: 13px; font-weight: 600; padding: 5px 11px; border-radius: 99px; background: rgba(128,128,128,.16); }
-  .empty { color: var(--hint); font-size: 15px; padding: 4px 0; }
-  .total { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; color: var(--hint); }
-  .total b { color: var(--fg); }
-  .hint { font-size: 12px; color: var(--hint); margin: 6px 2px 0; }
-  .note { font-size: 12px; color: var(--hint); line-height: 1.5; padding: 0 4px; }
+  .prog { margin-top: 18px; }
+  .prog .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; font-size: 13px; color: var(--fg2); }
+  .prog .top span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+  .prog b { color: var(--fg); font-weight: 700; }
+  .bar { height: 12px; border-radius: 99px; background: rgba(255,255,255,.1); box-shadow: inset 0 1px 3px rgba(0,0,0,.4); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; border-radius: 99px; transition: width .7s cubic-bezier(.2,.8,.2,1);
+             background: linear-gradient(90deg, #0a84ff, #30d158); box-shadow: 0 0 16px rgba(48,209,88,.5), inset 0 1px 0 rgba(255,255,255,.4); }
 
-  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  @keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
+  .h2 { margin: 0 0 12px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg3); }
+  .item { position: relative; display: flex; align-items: center; gap: 13px; padding: 12px 14px; margin-bottom: 10px; border-radius: 22px; overflow: hidden;
+          background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.1); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+  .item::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .14;
+                  background: radial-gradient(circle at 12% 50%, var(--c), transparent 62%); }
+  .item.first { border-color: rgba(255,255,255,.26); }
+  .item.first::before { opacity: .3; }
+  .ico { position: relative; width: 54px; height: 54px; flex: none; display: grid; place-items: center; border-radius: 50%;
+         background: rgba(255,255,255,.07); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 6px 16px rgba(0,0,0,.3); }
+  .mid { position: relative; flex: 1; min-width: 0; }
+  .nm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 18px; font-weight: 700; letter-spacing: -.02em; }
+  .dt { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 13.5px; color: var(--fg2); }
+  .tag { padding: 2px 9px; border-radius: 99px; font-size: 11px; font-weight: 650; letter-spacing: 0; color: #cfe3ff; background: rgba(10,132,255,.3); border: 1px solid rgba(110,170,255,.4); }
+  .pill { position: relative; flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 99px; font-size: 12.5px; font-weight: 650;
+          background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.12); }
+  .empty { color: var(--fg2); font-size: 15px; }
+  .total { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1); font-size: 14px; color: var(--fg2); }
+  .total b { color: var(--fg); font-weight: 700; }
+
+  .notecard { padding: 14px 16px; border-radius: 22px; display: flex; gap: 11px; align-items: flex-start; }
+  .notecard svg { flex: none; margin-top: 2px; color: var(--fg3); }
+  .note { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--fg3); }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .blob, .card, .ddlist { animation: none !important; } .bar > i { transition: none; } }
 </style>
 </head>
 <body>
+<div class="bg"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
 <div class="wrap">
-  <div class="head">
-    <div class="logo" id="logo"></div>
+  <header class="head">
+    <div class="logo glass" id="logo"></div>
     <div>
       <h1>Калькулятор медали</h1>
       <div class="sub" id="year"></div>
     </div>
-  </div>
+  </header>
 
-  <div class="card top">
-    <label for="g">XP за игру</label>
-    <input id="g" type="number" inputmode="decimal" step="any" min="1">
+  <section class="card glass top">
+    <div class="lab"><i data-ic="bolt" data-s="15"></i><label for="g">XP за игру</label></div>
+    <input class="inp" id="g" type="number" inputmode="decimal" step="any" min="1">
     <div class="hint">сколько XP за игру ты получаешь после штрафа (молния XP Overload на нике)</div>
 
     <div class="row">
-      <div><label for="r">Ранг сейчас</label><input id="r" type="number" inputmode="numeric" min="1" max="40"></div>
-      <div><label for="x">XP</label><input id="x" type="number" inputmode="numeric" min="0" max="4999"></div>
+      <div>
+        <div class="lab"><i data-ic="flag" data-s="15"></i><label for="r">Ранг сейчас</label></div>
+        <input class="inp" id="r" type="number" inputmode="numeric" min="1" max="40">
+      </div>
+      <div>
+        <div class="lab"><i data-ic="target" data-s="15"></i><label for="x">XP</label></div>
+        <input class="inp" id="x" type="number" inputmode="numeric" min="0" max="4999">
+      </div>
     </div>
 
-    <label>Уровень медали</label>
+    <div class="lab"><i data-ic="rosette" data-s="15"></i><label>Уровень медали</label></div>
     <div class="dd">
       <button type="button" class="ddbtn" id="ddBtn"></button>
-      <div class="ddlist" id="ddList" hidden></div>
     </div>
-  </div>
+  </section>
 
-  <div class="card" id="summary"></div>
-  <div class="card" id="levels"></div>
-  <p class="note" id="note"></p>
+  <section class="card glass" id="summary"></section>
+  <section class="card glass" id="levels"></section>
+
+  <div class="notecard glass">
+    <i data-ic="info" data-s="16"></i>
+    <p class="note" id="note"></p>
+  </div>
 </div>
+<div class="ddlist" id="ddList" hidden></div>
 
 <script>
 // Калькулятор сервисной медали CS2. Один и тот же код работает и в боте, и в мини-приложении.
@@ -215,7 +301,12 @@
 <script>
 (function () {
   var tg = window.Telegram && window.Telegram.WebApp;
-  if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+  if (tg) {
+    try { tg.ready(); } catch (e) {}
+    try { tg.expand(); } catch (e) {}
+    try { tg.setBackgroundColor('#07090d'); } catch (e) {}
+    try { tg.setHeaderColor('#07090d'); } catch (e) {}
+  }
 
   var q = new URLSearchParams(location.search);
   function param(name, fallback) {
@@ -228,6 +319,25 @@
   var MIN_PER_GAME = param('m', 10.8);
   var WEEK_XP = param('w', 0);
   var HOURS_PER_DAY = 24;
+
+  // Иконки в стиле iOS (тонкие скруглённые линии, как у SF Symbols). Нарисованы вручную, это не файлы Apple.
+  var IC = {
+    bolt: '<path d="M13.2 2.5 4.8 13.4h6.2l-.9 8.1 8.5-11.2h-6.1z" fill="currentColor" stroke="none"/>',
+    gamepad: '<path d="M7.6 7h8.8a4.6 4.6 0 0 1 4.5 3.7l.8 4.3a2.9 2.9 0 0 1-5 2.3L15 15.6H9l-1.7 1.7a2.9 2.9 0 0 1-5-2.3l.8-4.3A4.6 4.6 0 0 1 7.6 7Z"/><path d="M8.2 10v3.2M6.6 11.6h3.2"/><circle cx="15.6" cy="10.9" r=".9" fill="currentColor" stroke="none"/><circle cx="17.9" cy="12.7" r=".9" fill="currentColor" stroke="none"/>',
+    flag: '<path d="M6 21.5V3.5"/><path d="M6 4.5h11.2l-2.1 4.2 2.1 4.2H6"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
+    rosette: '<circle cx="12" cy="9" r="5.6"/><path d="M8.6 13.6 7 21.2l5-2.7 5 2.7-1.6-7.6"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="4"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.1 1.9"/>',
+    chev: '<path d="M8 9.6 12 5.6l4 4M8 14.4l4 4 4-4"/>',
+    check: '<path d="M5.2 12.8 9.8 17.4 18.8 7.2"/>',
+    info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/>'
+  };
+  function ico(name, size) {
+    size = size || 18;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+           'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none">' + (IC[name] || '') + '</svg>';
+  }
 
   var MEDALS = [
     { lvl: 0, name: 'Нет медали', color: null },
@@ -246,7 +356,7 @@
   function svgIcon(color, size) {
     if (!color) {
       return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7" fill="none" ' +
-             'stroke="#8b949e" stroke-width="1.6" stroke-dasharray="3 3"/></svg>';
+             'stroke="#8e8e93" stroke-width="1.6" stroke-dasharray="3 3"/></svg>';
     }
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24">' +
       '<path d="M6.5 1.5h4l3 8h-4z" fill="' + color + '" opacity=".6"/>' +
@@ -254,34 +364,66 @@
       '<circle cx="12" cy="15" r="7.5" fill="' + color + '"/>' +
       '<circle cx="12" cy="15" r="4.6" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/></svg>';
   }
-  window.__fb = function (img, color, size) { img.outerHTML = svgIcon(color, size); };
-  function icon(color, size, lvl) {
-    size = size || 24;
+  // Порядок такой: сначала картинка из папки medals рядом со страницей, потом SteamDB (без отправки адреса сайта,
+  // чтобы обойти защиту от прямых ссылок), и только если и это не вышло, нарисованная иконка.
+  window.__fb = function (img, color, size) {
+    if (!img.getAttribute('data-t') && img.getAttribute('data-remote')) {
+      img.setAttribute('data-t', '1');
+      img.src = img.getAttribute('data-remote');
+      return;
+    }
+    img.outerHTML = svgIcon(color, size);
+  };
+  function medalIcon(color, size, lvl) {
     var year = new Date().getUTCFullYear();
     if (color && lvl >= 1 && MEDAL_BASE[year]) {
-      var url = 'https://www.steamdb.com/assets/images/skins/cs2/collectibles/' + year + '-service-medal--' + (MEDAL_BASE[year] + lvl - 1) + '.png';
-      return '<img src="' + url + '" width="' + size + '" height="' + size + '" alt="" style="object-fit:contain" ' +
-             'onerror="__fb(this,\'' + color + '\',' + size + ')">';
+      var remote = 'https://www.steamdb.com/assets/images/skins/cs2/collectibles/' + year + '-service-medal--' + (MEDAL_BASE[year] + lvl - 1) + '.png';
+      var local = 'medals/' + lvl + '.png';
+      return '<img src="' + local + '" data-remote="' + remote + '" referrerpolicy="no-referrer" width="' + size + '" height="' + size + '" alt="" ' +
+             'style="object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))" onerror="__fb(this,\'' + color + '\',' + size + ')">';
     }
     return svgIcon(color, size);
   }
 
   function renderDropdown() {
     var m = MEDALS[medalLevel];
-    el('ddBtn').innerHTML = icon(m.color, 30, m.lvl) + '<span>' + m.name + '</span>';
+    el('ddBtn').innerHTML = medalIcon(m.color, 32, m.lvl) + '<span>' + m.name + '</span><span class="chev">' + ico('chev', 18) + '</span>';
     var html = '';
     MEDALS.forEach(function (x) {
       html += '<button type="button" class="dditem' + (x.lvl === medalLevel ? ' sel' : '') + '" data-lvl="' + x.lvl + '">' +
-              icon(x.color, 30, x.lvl) + '<span>' + x.name + '</span></button>';
+              medalIcon(x.color, 32, x.lvl) + '<span>' + x.name + '</span><span class="ck">' + ico('check', 18) + '</span></button>';
     });
     el('ddList').innerHTML = html;
+  }
+  function placeList() {
+    var btn = el('ddBtn'), list = el('ddList');
+    if (!btn.getBoundingClientRect) return;
+    var r = btn.getBoundingClientRect();
+    var vh = window.innerHeight || 700;
+    list.style.left = r.left + 'px';
+    list.style.width = r.width + 'px';
+    list.style.maxHeight = '';
+    var h = list.offsetHeight;
+    var below = vh - r.bottom - 14;
+    var above = r.top - 14;
+    if (h <= below) { list.style.top = (r.bottom + 8) + 'px'; }
+    else if (h <= above) { list.style.top = (r.top - 8 - h) + 'px'; }
+    else if (below >= above) { list.style.top = (r.bottom + 8) + 'px'; list.style.maxHeight = below + 'px'; }
+    else { list.style.top = '14px'; list.style.maxHeight = above + 'px'; }
   }
   function setOpen(open) {
     el('ddList').hidden = !open;
     if (el('ddBtn').classList) el('ddBtn').classList.toggle('open', open);
+    if (open) placeList();
   }
 
-  el('logo').innerHTML = icon('#4285f4', 32, 3);
+  // подставляем иконки в разметку
+  var slots = document.querySelectorAll ? document.querySelectorAll('[data-ic]') : [];
+  for (var i = 0; i < slots.length; i++) {
+    slots[i].outerHTML = ico(slots[i].getAttribute('data-ic'), parseInt(slots[i].getAttribute('data-s'), 10) || 18);
+  }
+
+  el('logo').innerHTML = medalIcon('#4285f4', 38, 3);
   el('g').value = param('g', 50);
   el('r').value = param('r', 1);
   el('x').value = param('x', 0);
@@ -331,10 +473,10 @@
     var pct = Math.min(100, Math.max(0, done / XpCalc.TO_RANK_40 * 100));
     el('summary').innerHTML =
       '<div class="tiles">' +
-        '<div class="tile"><div class="v">' + Math.round(r.gamesPerDay) + '</div><div class="k">игр в сутки</div></div>' +
-        '<div class="tile"><div class="v">~' + fmt(r.xpPerDay) + '</div><div class="k">XP в сутки (в среднем)</div></div>' +
+        '<div class="tile"><div class="ti" style="color:#0a84ff">' + ico('gamepad', 19) + '</div><div class="v">' + Math.round(r.gamesPerDay) + '</div><div class="k">игр в сутки</div></div>' +
+        '<div class="tile"><div class="ti" style="color:#ffd60a">' + ico('bolt', 19) + '</div><div class="v">~' + fmt(r.xpPerDay) + '</div><div class="k">XP в сутки (в среднем)</div></div>' +
       '</div>' +
-      '<div class="prog"><div class="top"><span>До 40 ранга</span><span><b>' + fmt(left) + '</b> XP</span></div>' +
+      '<div class="prog"><div class="top"><span>' + ico('flag', 14) + 'До 40 ранга</span><span><b>' + fmt(left) + '</b> XP</span></div>' +
       '<div class="bar"><i style="width:' + pct.toFixed(1) + '%"></i></div></div>';
 
     var html = '<div class="h2">Когда получишь</div>';
@@ -345,10 +487,11 @@
     } else {
       r.results.forEach(function (x, i) {
         var m = MEDALS[Math.min(x.level, 6)];
-        html += '<div class="item"><div class="ico" style="border-color:' + m.color + ';box-shadow:0 0 18px ' + m.color + '40">' + icon(m.color, 36, m.lvl) + '</div>' +
+        html += '<div class="item' + (i === 0 ? ' first' : '') + '" style="--c:' + m.color + '">' +
+                '<div class="ico">' + medalIcon(m.color, 42, m.lvl) + '</div>' +
                 '<div class="mid"><div class="nm">' + m.name + (i === 0 ? ' <span class="tag">ближайшая</span>' : '') + '</div>' +
-                '<div class="dt">' + when(x.at) + '</div></div>' +
-                '<div class="pill">' + inText(x.at, now) + '</div></div>';
+                '<div class="dt">' + ico('calendar', 14) + '<span>' + when(x.at) + '</span></div></div>' +
+                '<div class="pill">' + ico('clock', 13) + inText(x.at, now) + '</div></div>';
       });
       html += '<div class="total">До конца ' + year + ' года: <b>' + r.results.length + ' ' + medals(r.results.length) + '</b></div>';
     }
@@ -370,13 +513,18 @@
     render();
   });
   document.addEventListener('click', function (e) {
-    if (e.target && e.target.closest && !e.target.closest('.dd')) setOpen(false);
+    if (e.target && e.target.closest && !e.target.closest('.dd') && !e.target.closest('#ddList')) setOpen(false);
   });
+  if (window.addEventListener) {
+    window.addEventListener('scroll', function () { if (!el('ddList').hidden) setOpen(false); }, { passive: true });
+    window.addEventListener('resize', function () { if (!el('ddList').hidden) setOpen(false); });
+  }
 
   el('note').textContent =
     'Даты примерные. Считается, что играешь без остановки, примерно раз в ' + (Math.round(MIN_PER_GAME * 10) / 10) +
     ' мин. Учтены недельный бонус (x4 и x2 в начале недели) и штраф XP Overload (x0,175 после ~11 167 XP за неделю), сброс в среду. ' +
-    'XP за игру впиши такой, какой получаешь после штрафа, а бонус в начале недели я добавлю сам. Следующая медаль это снова 195 000 XP с первого ранга. Медали выдаются за календарный год.';
+    'XP за игру впиши такой, какой получаешь после штрафа, а бонус в начале недели я добавлю сам. ' +
+    'Следующая медаль это снова 195 000 XP с первого ранга. Медали выдаются за календарный год.';
   renderDropdown();
   render();
 })();
