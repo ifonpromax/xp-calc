@@ -611,7 +611,8 @@
                 '<div class="pill">' + ico('clock', 13) + inText(x.at, now) + '</div></div>';
       });
       html += '<div class="total"><span>До конца ' + year + ' года</span><b>' + r.results.length + ' ' + medals(r.results.length) + '</b></div>';
-      shareData = { results: r.results, now: now, year: year, rank: Math.floor(rank), xpPerDay: r.xpPerDay };
+      shareData = { results: r.results, now: now, year: year, rank: Math.floor(rank), xpPerDay: r.xpPerDay,
+        query: [Math.floor(rank), Math.floor(xpIn), num('g', 0), medalLevel, MIN_PER_GAME].join(' ') };
       html += '<button type="button" class="share" id="share">' + ico('share', 18) + 'Поделиться</button>';
     }
     el('levels').innerHTML = html;
@@ -791,6 +792,14 @@
   el('levels').addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('#share');
     if (!btn || !shareData || sharing) return;
+    // В Телеграме: выбор чата, бот сам рисует картинку и отдаёт её как фото (инлайн-режим бота)
+    if (tg && tg.initData && tg.switchInlineQuery && tg.isVersionAtLeast && tg.isVersionAtLeast('6.7')) {
+      try {
+        try { tg.HapticFeedback.impactOccurred('light'); } catch (err) {}
+        tg.switchInlineQuery(shareData.query, ['users', 'groups', 'channels']);
+        return;
+      } catch (err) { /* инлайн у бота выключен: рисуем картинку здесь */ }
+    }
     sharing = true;
     btn.style.opacity = '.6';
     try { tg.HapticFeedback.impactOccurred('light'); } catch (err) {}
