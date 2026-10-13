@@ -224,6 +224,17 @@
            background: linear-gradient(90deg, #ff7a00, var(--acc) 55%, var(--acc2)); box-shadow: 0 8px 24px rgba(var(--accRGB), .3), inset 0 1px 0 rgba(255,255,255,.35);
            transition: transform .12s, box-shadow .2s, filter .2s; }
   .share:active { transform: scale(.985); }
+  a.share { text-decoration: none; }
+
+  .shot { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px;
+          background: rgba(5,6,8,.82); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: pop .2s ease both; }
+  .shot-in { width: 100%; max-width: 420px; text-align: center; }
+  .shot img { display: block; width: 100%; max-height: 68vh; object-fit: contain; border-radius: 6px; box-shadow: 0 30px 70px rgba(0,0,0,.7); }
+  .shot p { margin: 12px 0 0; font-size: 13px; color: var(--fg2); }
+  .shot-btns { display: flex; gap: 10px; margin-top: 12px; }
+  .shot-btns .share { margin: 0; flex: 1; }
+  .shot-x { flex: 1; padding: 13px 16px; cursor: pointer; font: 800 15px/1 var(--display); letter-spacing: .06em; text-transform: uppercase;
+            color: var(--fg); background: rgba(255,255,255,.06); border: 1px solid var(--line2); border-radius: 4px; }
   .share:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   .total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line2);
            font: 500 11px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg2); }
@@ -471,22 +482,16 @@
       '<circle cx="12" cy="15" r="7.5" fill="' + color + '"/>' +
       '<circle cx="12" cy="15" r="4.6" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/></svg>';
   }
-  // Порядок такой: сначала картинка из папки medals рядом со страницей, потом SteamDB (без отправки адреса сайта,
-  // чтобы обойти защиту от прямых ссылок), и только если и это не вышло, нарисованная иконка.
+  // Картинка с SteamDB (без отправки адреса сайта, чтобы обойти защиту от прямых ссылок),
+  // а если она не загрузилась, нарисованная иконка.
   window.__fb = function (img, color, size) {
-    if (!img.getAttribute('data-t') && img.getAttribute('data-remote')) {
-      img.setAttribute('data-t', '1');
-      img.src = img.getAttribute('data-remote');
-      return;
-    }
     img.outerHTML = svgIcon(color, size);
   };
   function medalIcon(color, size, lvl) {
     var year = new Date().getUTCFullYear();
     if (color && lvl >= 1 && MEDAL_BASE[year]) {
       var remote = 'https://www.steamdb.com/assets/images/skins/cs2/collectibles/' + year + '-service-medal--' + (MEDAL_BASE[year] + lvl - 1) + '.png';
-      var local = 'medals/' + lvl + '.png';
-      return '<img src="' + local + '" data-remote="' + remote + '" referrerpolicy="no-referrer" width="' + size + '" height="' + size + '" alt="" ' +
+      return '<img src="' + remote + '" referrerpolicy="no-referrer" width="' + size + '" height="' + size + '" alt="" ' +
              'style="object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5))" onerror="__fb(this,\'' + color + '\',' + size + ')">';
     }
     return svgIcon(color, size);
@@ -606,11 +611,7 @@
                 '<div class="pill">' + ico('clock', 13) + inText(x.at, now) + '</div></div>';
       });
       html += '<div class="total"><span>До конца ' + year + ' года</span><b>' + r.results.length + ' ' + medals(r.results.length) + '</b></div>';
-      var next = r.results[0];
-      shareText = 'Следующая медаль CS2 (' + MEDALS[Math.min(next.level, 6)].name.toLowerCase() + ') у меня будет ' +
-        new Date(next.at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) +
-        (r.results.length > 1 ? ', а до конца года выбью ещё ' + r.results.length + ' ' + medals(r.results.length) : '') +
-        ' 🔥\nПосчитай, когда получишь свою:';
+      shareData = { results: r.results, now: now, year: year, rank: Math.floor(rank), xpPerDay: r.xpPerDay };
       html += '<button type="button" class="share" id="share">' + ico('share', 18) + 'Поделиться</button>';
     }
     el('levels').innerHTML = html;
@@ -661,20 +662,147 @@
     el('week').innerHTML = html;
   }
 
-  // Поделиться: в Телеграме открываем выбор чата, в браузере системное меню или новую вкладку
-  var shareText = '';
+  // ---------- Картинка для «Поделиться» ----------
+  // Рисуем карточку 1080x1350 на canvas. Картинки SteamDB рисовать нельзя (без CORS холст «портится»),
+  // поэтому на картинке свои медали «в стиле Paint» из папки paint/, а если их нет, простая нарисованная медаль.
+  var shareData = null;
+  function loadImg(src) {
+    return new Promise(function (ok) {
+      var im = new Image();
+      im.onload = function () { ok(im); };
+      im.onerror = function () { ok(null); };
+      im.src = src;
+    });
+  }
+  function medalImg(lvl) {
+    var m = MEDALS[lvl];
+    return loadImg('paint/' + lvl + '.png').then(function (im) {
+      if (im) return im;
+      var svg = svgIcon(m.color, 240).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+      return loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+    });
+  }
+  function rgba(hex, a) {
+    var n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+  function spaced(ctx, px) { if ('letterSpacing' in ctx) ctx.letterSpacing = px + 'px'; }
+
+  function drawCard(d) {
+    var W = 1080, H = 1350, P = 72;
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false; // медали нарисованы «пикселями», при увеличении не размываем
+    var next = d.results[0];
+    var nm = MEDALS[Math.min(next.level, 6)];
+    var fonts = ['italic 900 120px "Exo 2"', '800 72px "Exo 2"', '700 28px "JetBrains Mono"', '500 28px "JetBrains Mono"'];
+    var levels = d.results.map(function (x) { return Math.min(x.level, 6); });
+
+    return Promise.all([
+      document.fonts ? Promise.all(fonts.map(function (f) { return document.fonts.load(f, 'АБВ123'); })) : null,
+      Promise.all(levels.map(medalImg))
+    ]).then(function (res) {
+      var imgs = res[1];
+
+      // фон: тёмный, сетка, оранжевое и синее зарево, зарево цвета медали за ней
+      ctx.fillStyle = '#090b0e'; ctx.fillRect(0, 0, W, H);
+      var g = ctx.createRadialGradient(W * .9, -80, 0, W * .9, -80, 800);
+      g.addColorStop(0, 'rgba(255,159,28,.30)'); g.addColorStop(1, 'rgba(255,159,28,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      g = ctx.createRadialGradient(-100, H + 100, 0, -100, H + 100, 800);
+      g.addColorStop(0, 'rgba(60,120,255,.20)'); g.addColorStop(1, 'rgba(60,120,255,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(255,255,255,.035)'; ctx.lineWidth = 1;
+      for (var x = 0; x <= W; x += 54) { ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); ctx.stroke(); }
+      for (var y = 0; y <= H; y += 54) { ctx.beginPath(); ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); ctx.stroke(); }
+
+      // шапка
+      ctx.fillStyle = '#ff9f1c'; ctx.shadowColor = '#ff9f1c'; ctx.shadowBlur = 16;
+      ctx.fillRect(P, P + 2, 18, 18); ctx.shadowBlur = 0;
+      ctx.font = fonts[2]; spaced(ctx, 5); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.fillText('CS2 · SERVICE MEDAL ' + d.year, P + 36, P + 12);
+
+      // главная медаль
+      var cx = W / 2, cy = 440;
+      g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 340);
+      g.addColorStop(0, rgba(nm.color, .55)); g.addColorStop(1, rgba(nm.color, 0));
+      ctx.fillStyle = g; ctx.fillRect(0, 100, W, 760);
+      ctx.strokeStyle = rgba(nm.color, .35); ctx.lineWidth = 2; ctx.setLineDash([10, 12]);
+      ctx.beginPath(); ctx.arc(cx, cy, 240, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      if (imgs[0]) {
+        ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+        ctx.drawImage(imgs[0], cx - 190, cy - 190, 380, 380);
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      }
+
+      ctx.textAlign = 'center';
+      ctx.font = fonts[3]; spaced(ctx, 6); ctx.fillStyle = 'rgba(230,236,245,.6)';
+      ctx.fillText('СЛЕДУЮЩАЯ МЕДАЛЬ', cx, 740);
+      ctx.font = fonts[0]; spaced(ctx, 0); ctx.fillStyle = nm.color;
+      ctx.shadowColor = rgba(nm.color, .6); ctx.shadowBlur = 40;
+      ctx.fillText(nm.name.toUpperCase(), cx, 830); ctx.shadowBlur = 0;
+      ctx.font = fonts[1]; ctx.fillStyle = '#f2f4f7';
+      ctx.fillText(new Date(next.at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }), cx, 930);
+      ctx.font = fonts[3]; spaced(ctx, 3); ctx.fillStyle = '#ff9f1c';
+      ctx.fillText('ЧЕРЕЗ ' + inText(next.at, d.now).toUpperCase(), cx, 990);
+
+      // все медали до конца года
+      var by = 1050;
+      ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+      ctx.beginPath(); ctx.moveTo(P, by); ctx.lineTo(W - P, by); ctx.stroke(); ctx.setLineDash([]);
+      ctx.textAlign = 'left'; ctx.font = fonts[3]; spaced(ctx, 3); ctx.fillStyle = 'rgba(230,236,245,.55)';
+      ctx.fillText('ДО КОНЦА ' + d.year, P, by + 58);
+      ctx.textAlign = 'right'; ctx.font = 'italic 900 52px "Exo 2"'; spaced(ctx, 0); ctx.fillStyle = '#ff9f1c';
+      ctx.shadowColor = 'rgba(255,159,28,.5)'; ctx.shadowBlur = 24;
+      ctx.fillText(d.results.length + ' ' + medals(d.results.length).toUpperCase(), W - P, by + 58); ctx.shadowBlur = 0;
+
+      var n = d.results.length, slot = (W - P * 2) / n, s = Math.min(96, slot - 20);
+      d.results.forEach(function (r, i) {
+        var mx = P + slot * i + slot / 2;
+        if (imgs[i]) ctx.drawImage(imgs[i], mx - s / 2, by + 95, s, s);
+        ctx.textAlign = 'center'; ctx.font = '700 26px "JetBrains Mono"'; spaced(ctx, 1); ctx.fillStyle = '#f2f4f7';
+        ctx.fillText(new Date(r.at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }), mx, by + 95 + s + 34);
+      });
+
+      // рамка
+      ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 2;
+      ctx.strokeRect(24, 24, W - 48, H - 48);
+      return new Promise(function (ok) { cv.toBlob(ok, 'image/png'); });
+    });
+  }
+
+  // Окно с готовой картинкой: на случай, когда системное «Поделиться» недоступно (Telegram на Android и ПК)
+  function showCard(blob) {
+    var url = URL.createObjectURL(blob);
+    var box = document.createElement('div');
+    box.className = 'shot';
+    box.innerHTML = '<div class="shot-in"><img src="' + url + '" alt="Карточка медали">' +
+      '<p>Зажми картинку, чтобы сохранить или переслать</p>' +
+      '<div class="shot-btns"><a class="share" href="' + url + '" download="cs2-medal.png">Скачать</a>' +
+      '<button type="button" class="shot-x">Закрыть</button></div></div>';
+    box.addEventListener('click', function (e) {
+      if (e.target === box || e.target.closest('.shot-x')) { box.remove(); URL.revokeObjectURL(url); }
+    });
+    document.body.appendChild(box);
+  }
+
+  var sharing = false;
   el('levels').addEventListener('click', function (e) {
-    if (!e.target.closest || !e.target.closest('#share')) return;
-    var url = location.origin + location.pathname; // без параметров, чтобы не делиться своими цифрами
-    var link = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(shareText);
-    if (tg && tg.initData && tg.openTelegramLink) {
-      try { tg.HapticFeedback.impactOccurred('light'); } catch (err) {}
-      tg.openTelegramLink(link);
-    } else if (navigator.share) {
-      navigator.share({ text: shareText, url: url }).catch(function () {});
-    } else {
-      window.open(link, '_blank', 'noopener');
-    }
+    var btn = e.target.closest && e.target.closest('#share');
+    if (!btn || !shareData || sharing) return;
+    sharing = true;
+    btn.style.opacity = '.6';
+    try { tg.HapticFeedback.impactOccurred('light'); } catch (err) {}
+    drawCard(shareData).then(function (blob) {
+      var file = new File([blob], 'cs2-medal.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file] }).catch(function (err) {
+          if (!err || err.name !== 'AbortError') showCard(blob);
+        });
+      }
+      showCard(blob);
+    }).catch(function () {}).then(function () { sharing = false; btn.style.opacity = ''; });
   });
   setInterval(renderWeek, 30000);
 
