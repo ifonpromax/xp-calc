@@ -66,25 +66,12 @@
        background: linear-gradient(180deg, #fff 30%, #c9ced8); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .sub { margin-top: 6px; font-size: 13px; color: var(--fg2); }
 
-  /* панели в стиле HUD: тонкая рамка и оранжевые уголки */
+  /* панели в стиле HUD: тонкая рамка */
   .card { position: relative; padding: 18px; margin-bottom: 14px; border-radius: 6px;
           background: var(--panel); border: 1px solid var(--line);
           -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
           box-shadow: 0 20px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
           animation: rise .55s cubic-bezier(.2,.8,.2,1) both; }
-  .card::before, .logo::before { content: ""; position: absolute; inset: -1px; pointer-events: none; border-radius: 6px;
-    --k: 14px; --t: 2px; --c: var(--acc);
-    background:
-      linear-gradient(var(--c), var(--c)) top left / var(--k) var(--t) no-repeat,
-      linear-gradient(var(--c), var(--c)) top left / var(--t) var(--k) no-repeat,
-      linear-gradient(var(--c), var(--c)) top right / var(--k) var(--t) no-repeat,
-      linear-gradient(var(--c), var(--c)) top right / var(--t) var(--k) no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom left / var(--k) var(--t) no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--k) no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom right / var(--k) var(--t) no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--k) no-repeat;
-    opacity: .85; transition: opacity .25s; }
-  .logo::before { --k: 10px; }
 
   /* фон панелей: мягкие оранжевое и синее пятна медленно плавают внутри, плюс редкий диагональный блик */
   .card::after, .logo::after, .notecard::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
@@ -95,7 +82,8 @@
     animation: roam 48s cubic-bezier(.37,0,.63,1) infinite; }
   .card:nth-of-type(2)::after { animation-delay: -11s; }
   .card:nth-of-type(3)::after { animation-delay: -22s; }
-  .notecard::after { animation-delay: -33s; }
+  .card:nth-of-type(4)::after { animation-delay: -30s; }
+  .notecard::after { animation-delay: -38s; }
   .logo::after { animation-delay: -6s; }
   /* позиции слоёв: блик, оранжевое пятно, синее пятно. Блик проходит дважды за цикл */
   @keyframes roam {
@@ -108,7 +96,7 @@
   }
 
   .card.top { z-index: 10; }
-  .card:nth-of-type(2) { animation-delay: .07s; } .card:nth-of-type(3) { animation-delay: .14s; }
+  .card:nth-of-type(2) { animation-delay: .07s; } .card:nth-of-type(3) { animation-delay: .14s; } .card:nth-of-type(4) { animation-delay: .21s; }
 
   .ch { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font: 700 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg2); }
   .ch b { color: var(--acc); font-weight: 700; }
@@ -215,6 +203,28 @@
           color: var(--fg); background: rgba(0,0,0,.35); border: 1px solid var(--line2); }
   .pill svg { color: var(--acc); }
   .empty { color: var(--fg2); font-size: 15px; }
+
+  /* неделя: таймер до сброса и шкала бонусов x4 / x2 / x1 / штраф */
+  .wk-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .mult { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 3px; font: 800 15px/1 var(--display);
+          color: var(--z); background: color-mix(in srgb, var(--z) 14%, transparent); border: 1px solid color-mix(in srgb, var(--z) 40%, transparent); }
+  .mult small { font: 600 10.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg2); }
+  .reset { text-align: right; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg2); }
+  .reset b { display: block; margin-top: 5px; font: 800 20px/1 var(--display); letter-spacing: 0; text-transform: none; color: var(--fg); }
+  .zones { display: flex; gap: 3px; height: 10px; margin-top: 16px; }
+  .zones > div { position: relative; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--z) 18%, transparent); }
+  .zones > div > i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--z); box-shadow: 0 0 10px var(--z); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+  .zlab { display: flex; gap: 3px; margin-top: 7px; font: 700 10.5px/1 var(--mono); }
+  .zlab > span { color: color-mix(in srgb, var(--z) 80%, #fff); opacity: .75; }
+  .wk-note { margin: 12px 0 0; font-size: 13px; color: var(--fg2); }
+  .wk-note b { color: var(--fg); font-weight: 700; }
+
+  .share { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; margin-top: 14px; padding: 13px 16px; cursor: pointer;
+           font: 800 15px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: #1a1000; border: 0; border-radius: 4px;
+           background: linear-gradient(90deg, #ff7a00, var(--acc) 55%, var(--acc2)); box-shadow: 0 8px 24px rgba(var(--accRGB), .3), inset 0 1px 0 rgba(255,255,255,.35);
+           transition: transform .12s, box-shadow .2s, filter .2s; }
+  .share:active { transform: scale(.985); }
+  .share:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   .total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line2);
            font: 500 11px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg2); }
   .total b { font: 900 italic 26px/1 var(--display); letter-spacing: 0; text-transform: none; color: var(--acc); text-shadow: 0 0 18px rgba(var(--accRGB), .45); white-space: nowrap; }
@@ -226,8 +236,8 @@
   .note { margin: 0; font-size: 12px; line-height: 1.55; color: var(--fg3); }
 
   @media (hover: hover) {
-    .card:hover::before { opacity: 1; }
     .card:hover { border-color: var(--line2); }
+    .share:hover { filter: brightness(1.08); box-shadow: 0 10px 30px rgba(var(--accRGB), .45), inset 0 1px 0 rgba(255,255,255,.35); }
     .tile, .item, .inp, .ddbtn, .dditem { transition: box-shadow .2s, border-color .2s, background .2s, transform .15s; }
     .tile:hover { border-color: rgba(var(--g), .45); box-shadow: 0 0 24px -6px rgb(var(--g)); }
     .item:hover { transform: translateX(3px); box-shadow: 0 0 26px -8px var(--c); }
@@ -287,6 +297,7 @@
   </section>
 
   <section class="card" id="summary"></section>
+  <section class="card" id="week"></section>
   <section class="card" id="levels"></section>
 
   <div class="notecard">
@@ -409,6 +420,10 @@
   // Скрытые настройки: минуты между играми и XP за неделю бот передаёт сам, иначе берутся обычные значения
   var MIN_PER_GAME = param('m', 10.8);
   var WEEK_XP = param('w', 0);
+  var HAS_WEEK = q.has('w'); // XP за неделю знает только бот владельца, у остальных показываем лишь таймер и пороги
+  // Когда бот сделал ссылку (t, мс). Если после этого прошёл сброс недели, набранный XP уже обнулился.
+  var WEEK_FROM = param('t', Date.now());
+  function weekXpNow(now) { return WEEK_FROM < XpCalc.lastReset(now) ? 0 : Math.max(0, WEEK_XP); }
   var HOURS_PER_DAY = 24;
 
   // Иконки (тонкие скруглённые линии). Нарисованы вручную.
@@ -422,6 +437,7 @@
     clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.1 1.9"/>',
     chev: '<path d="M7 9.5l5 5 5-5"/>',
     check: '<path d="M5.2 12.8 9.8 17.4 18.8 7.2"/>',
+    share: '<path d="M12 14.5V3.5M7.8 7.5 12 3.3l4.2 4.2"/><path d="M8 10.5H6.5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H16"/>',
     info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2"/><circle cx="12" cy="7.9" r=".9" fill="currentColor" stroke="none"/>'
   };
   function ico(name, size) {
@@ -550,12 +566,13 @@
       minPerGame: MIN_PER_GAME,
       hoursPerDay: HOURS_PER_DAY,
       weeklyBonus: true,
-      weekXp: Math.max(0, WEEK_XP)
+      weekXp: weekXpNow(now)
     };
     var r = XpCalc.simulate(o);
     if (r.error) {
       el('summary').innerHTML = '<div class="ch"><b>02</b>Прогресс</div><div class="empty">Впиши XP за игру, и я посчитаю.</div>';
       el('levels').innerHTML = '';
+      renderWeek();
       return;
     }
 
@@ -574,7 +591,7 @@
       '<div class="bar"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
       '<div class="scale"><span>1</span><span>10</span><span>20</span><span>30</span><span>40</span></div></div>';
 
-    var html = '<div class="ch"><b>03</b>Когда получишь</div>';
+    var html = '<div class="ch"><b>04</b>Когда получишь</div>';
     if (medalLevel >= 6) {
       html += '<div class="empty">У тебя уже максимальная медаль года (красная).</div>';
     } else if (!r.results.length) {
@@ -589,9 +606,77 @@
                 '<div class="pill">' + ico('clock', 13) + inText(x.at, now) + '</div></div>';
       });
       html += '<div class="total"><span>До конца ' + year + ' года</span><b>' + r.results.length + ' ' + medals(r.results.length) + '</b></div>';
+      var next = r.results[0];
+      shareText = 'Следующая медаль CS2 (' + MEDALS[Math.min(next.level, 6)].name.toLowerCase() + ') у меня будет ' +
+        new Date(next.at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) +
+        (r.results.length > 1 ? ', а до конца года выбью ещё ' + r.results.length + ' ' + medals(r.results.length) : '') +
+        ' 🔥\nПосчитай, когда получишь свою:';
+      html += '<button type="button" class="share" id="share">' + ico('share', 18) + 'Поделиться</button>';
     }
     el('levels').innerHTML = html;
+    renderWeek();
   }
+
+  // ---------- Неделя: сброс бонуса и сколько XP уже набрано ----------
+  var ZONES = [
+    { from: 0, to: 4500, mult: 'x4', color: '#30d158' },
+    { from: 4500, to: 7500, mult: 'x2', color: '#ffcb47' },
+    { from: 7500, to: XpCalc.OVERLOAD_FROM, mult: 'x1', color: '#7aa7ff' },
+    { from: XpCalc.OVERLOAD_FROM, to: XpCalc.OVERLOAD_FROM + 2500, mult: 'x0,175', color: '#ea4335' }
+  ];
+  function zoneOf(xp) {
+    for (var i = 0; i < ZONES.length - 1; i++) if (xp < ZONES[i].to) return ZONES[i];
+    return ZONES[ZONES.length - 1];
+  }
+  function leftText(ms) {
+    var m = Math.max(0, Math.floor(ms / 60000));
+    var d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
+    return d ? d + ' д ' + h + ' ч' : h ? h + ' ч ' + mm + ' мин' : mm + ' мин';
+  }
+  function renderWeek() {
+    var now = Date.now();
+    var reset = XpCalc.lastReset(now) + 7 * XpCalc.DAY;
+    var w = weekXpNow(now);
+    var z = zoneOf(w);
+    var html = '<div class="ch"><b>03</b>Неделя</div><div class="wk-top">';
+    html += HAS_WEEK
+      ? '<div class="mult" style="--z:' + z.color + '">' + z.mult + '<small>' + (z.mult === 'x0,175' ? 'штраф' : z.mult === 'x1' ? 'без бонуса' : 'бонус') + '</small></div>'
+      : '<div class="mult" style="--z:#30d158">x4<small>в начале недели</small></div>';
+    html += '<div class="reset">Сброс через<b>' + leftText(reset - now) + '</b></div></div>';
+
+    html += '<div class="zones">';
+    ZONES.forEach(function (x) {
+      var fill = HAS_WEEK ? Math.min(1, Math.max(0, (w - x.from) / (x.to - x.from))) : 0;
+      html += '<div style="flex:' + (x.to - x.from) + ';--z:' + x.color + '"><i style="width:' + (fill * 100).toFixed(1) + '%"></i></div>';
+    });
+    html += '</div><div class="zlab">';
+    ZONES.forEach(function (x) { html += '<span style="flex:' + (x.to - x.from) + ';--z:' + x.color + '">' + x.mult + '</span>'; });
+    html += '</div>';
+
+    var note;
+    if (!HAS_WEEK) note = 'Первые <b>4 500 XP</b> недели идут с бонусом x4, потом x2, после ~<b>' + fmt(XpCalc.OVERLOAD_FROM) + ' XP</b> включается штраф.';
+    else if (z.mult === 'x0,175') note = 'За неделю <b>' + fmt(w) + ' XP</b>. Штраф до сброса, дальше XP идёт медленно.';
+    else note = 'За неделю <b>' + fmt(w) + ' XP</b>. До ' + (z.mult === 'x1' ? 'штрафа' : 'конца ' + z.mult) + ' осталось <b>' + fmt(z.to - w) + ' XP</b>.';
+    html += '<p class="wk-note">' + note + '</p>';
+    el('week').innerHTML = html;
+  }
+
+  // Поделиться: в Телеграме открываем выбор чата, в браузере системное меню или новую вкладку
+  var shareText = '';
+  el('levels').addEventListener('click', function (e) {
+    if (!e.target.closest || !e.target.closest('#share')) return;
+    var url = location.origin + location.pathname; // без параметров, чтобы не делиться своими цифрами
+    var link = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(shareText);
+    if (tg && tg.initData && tg.openTelegramLink) {
+      try { tg.HapticFeedback.impactOccurred('light'); } catch (err) {}
+      tg.openTelegramLink(link);
+    } else if (navigator.share) {
+      navigator.share({ text: shareText, url: url }).catch(function () {});
+    } else {
+      window.open(link, '_blank', 'noopener');
+    }
+  });
+  setInterval(renderWeek, 30000);
 
   ['g', 'r', 'x'].forEach(function (id) {
     el(id).addEventListener('input', render);
