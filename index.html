@@ -328,10 +328,10 @@
   const DAY = 86400000;
   const MAX_MEDAL_LEVEL = 6;
 
-  // Последний недельный сброс (по умолчанию среда, 00:00 UTC). Точное время у Valve может чуть отличаться.
+  // Последний недельный сброс: среда, 01:00 UTC (04:00 МСК), так видно по реальным приростам XP.
   function lastReset(nowMs, resetDow, resetHour) {
     const dow = resetDow === undefined ? 3 : resetDow;
-    const hour = resetHour === undefined ? 0 : resetHour;
+    const hour = resetHour === undefined ? 1 : resetHour;
     const d = new Date(nowMs);
     const back = (d.getUTCDay() - dow + 7) % 7;
     const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hour) - back * DAY;
@@ -368,7 +368,7 @@
     const hoursPerDay = Math.min(24, Math.max(0.5, o.hoursPerDay || 24));
     const step = ((o.minPerGame * 24) / hoursPerDay) * MIN; // средний шаг между играми с учётом перерывов
     const resetDow = o.resetDow === undefined ? 3 : o.resetDow;
-    const resetHour = o.resetHour === undefined ? 0 : o.resetHour;
+    const resetHour = o.resetHour === undefined ? 1 : o.resetHour;
     let nextReset = lastReset(o.now, resetDow, resetHour) + 7 * DAY;
     let weekXp = o.weekXp || 0;
     let toGo = Math.max(0, (40 - o.rank) * XP_PER_RANK - (o.rank >= 40 ? 0 : o.xpInRank));
@@ -427,7 +427,7 @@
   function el(id) { return document.getElementById(id); }
 
   // Скрытые настройки: минуты между играми и XP за неделю бот передаёт сам, иначе берутся обычные значения
-  var MIN_PER_GAME = param('m', 10.8);
+  var MIN_PER_GAME = param('m', 11);
   var WEEK_XP = param('w', 0);
   var HAS_WEEK = q.has('w'); // XP за неделю знает только бот владельца, у остальных показываем лишь таймер и пороги
   // Когда бот сделал ссылку (t, мс). Если после этого прошёл сброс недели, набранный XP уже обнулился.
