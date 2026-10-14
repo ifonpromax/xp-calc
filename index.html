@@ -44,8 +44,6 @@
         background-size: 40px 40px;
         -webkit-mask: radial-gradient(ellipse 80% 60% at 50% 20%, #000 20%, transparent 85%); mask: radial-gradient(ellipse 80% 60% at 50% 20%, #000 20%, transparent 85%);
         animation: drift 30s linear infinite; }
-  .bg::after { content: ""; position: absolute; inset: 0; opacity: .5;
-        background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px); }
   .flare { position: absolute; width: 420px; height: 420px; right: -160px; top: -160px; border-radius: 50%;
            background: radial-gradient(circle, rgba(var(--accRGB), .35), transparent 65%); filter: blur(30px);
            animation: breathe 7s ease-in-out infinite alternate; }
@@ -61,13 +59,12 @@
   .logo img, .logo svg { position: relative; z-index: 1; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--m) 60%, transparent)) drop-shadow(0 3px 6px rgba(0,0,0,.5)) !important; }
   .kick { display: inline-flex; align-items: center; gap: 7px; font: 700 11px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--acc); }
   .kick i { width: 7px; height: 7px; background: var(--acc); box-shadow: 0 0 10px var(--acc); }
-  @keyframes blink { 50% { opacity: .25; } }
   h1 { margin: 6px 0 0; font: italic 900 30px/1 var(--display); letter-spacing: -.01em; text-transform: uppercase;
        background: linear-gradient(180deg, #fff 30%, #c9ced8); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .sub { margin-top: 6px; font-size: 13px; color: var(--fg2); }
 
   /* панели в стиле HUD: тонкая рамка */
-  .card { position: relative; padding: 18px; margin-bottom: 14px; border-radius: 6px;
+  .card { position: relative; padding: 18px; margin-bottom: 12px; border-radius: 6px;
           background: var(--panel); border: 1px solid var(--line);
           -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
           box-shadow: 0 20px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
@@ -102,7 +99,7 @@
   .ch b { color: var(--acc); font-weight: 700; }
   .ch::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line2), transparent); }
 
-  .lab { display: flex; align-items: center; gap: 7px; margin: 18px 0 8px; font-size: 12.5px; font-weight: 600; letter-spacing: .02em; color: var(--fg2); }
+  .lab { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; font-size: 12.5px; font-weight: 600; letter-spacing: .02em; color: var(--fg2); }
   .ch + .lab { margin-top: 0; }
   .lab svg { color: var(--acc); opacity: .85; }
   label { font: inherit; color: inherit; }
@@ -155,18 +152,17 @@
   .dditem.sel .ck { opacity: 1; }
 
   /* статистика */
-  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .tile { position: relative; padding: 14px 15px 13px; border-radius: 4px; overflow: hidden;
-          background: linear-gradient(160deg, rgba(var(--g), .12), rgba(255,255,255,.02) 60%); border: 1px solid var(--line); }
-  .tile::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 2px; background: rgb(var(--g)); box-shadow: 0 0 12px rgb(var(--g)); }
-  .tile .ti { position: absolute; right: 12px; top: 12px; color: rgb(var(--g)); opacity: .9; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { position: relative; padding: 14px 16px; border-radius: 4px; overflow: hidden;
+          background: rgba(255,255,255,.03); border: 1px solid var(--line); }
+  .tile .ti { position: absolute; right: 14px; top: 14px; color: var(--fg3); }
   .tile .v { font: 800 32px/1 var(--display); letter-spacing: -.01em; }
-  .tile .k { margin-top: 6px; font: 500 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--fg2); }
+  .tile .k { margin-top: 6px; font-size: 13px; color: var(--fg2); }
 
-  .prog { margin-top: 18px; }
-  .prog .top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
-  .rk { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg2); }
-  .rk b { display: block; margin-top: 5px; font: 800 24px/1 var(--display); letter-spacing: 0; color: var(--fg); text-transform: none; }
+  .prog { margin-top: 16px; }
+  .prog .top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+  .rk { font-size: 13px; color: var(--fg2); }
+  .rk b { display: block; margin-top: 4px; font: 800 24px/1 var(--display); color: var(--fg); }
   .rk b small { font-size: 15px; color: var(--fg3); font-weight: 700; }
   .rk.r { text-align: right; }
   .rk.r b { color: var(--acc); }
@@ -182,23 +178,18 @@
   .scale { display: flex; justify-content: space-between; margin-top: 6px; font: 500 10px/1 var(--mono); color: var(--fg3); }
 
   /* таймлайн медалей */
-  .item { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 14px; margin-bottom: 10px; border-radius: 4px;
-          background: linear-gradient(90deg, color-mix(in srgb, var(--c) 14%, transparent), rgba(255,255,255,.02) 55%); border: 1px solid var(--line);
+  .item { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 8px; border-radius: 4px;
+          background: linear-gradient(90deg, color-mix(in srgb, var(--c) 12%, transparent), rgba(255,255,255,.02) 55%); border: 1px solid var(--line);
           border-left: 3px solid var(--c); }
-  .item + .item::before { content: ""; position: absolute; left: 39px; top: -11px; width: 2px; height: 10px; background: var(--line2); }
-  .item.first { border-color: color-mix(in srgb, var(--c) 45%, transparent); border-left-color: var(--c);
-                box-shadow: 0 0 30px -8px var(--c), inset 0 0 0 1px rgba(255,255,255,.03); }
-  .ico { position: relative; width: 52px; height: 52px; flex: none; display: grid; place-items: center; border-radius: 50%;
-         background: radial-gradient(circle, color-mix(in srgb, var(--c) 30%, transparent), transparent 70%); }
-  .item.first .ico::before { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 1px dashed var(--c); opacity: .6; animation: spin 12s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .item.first { border-color: color-mix(in srgb, var(--c) 40%, transparent); border-left-color: var(--c); box-shadow: 0 0 24px -12px var(--c); }
+  .ico { position: relative; width: 48px; height: 48px; flex: none; display: grid; place-items: center; border-radius: 50%;
+         background: radial-gradient(circle, color-mix(in srgb, var(--c) 26%, transparent), transparent 70%); }
   .mid { position: relative; flex: 1; min-width: 0; }
   .nm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 800 19px/1.15 var(--display); }
-  .dt { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 13px; color: var(--fg2); }
+  .dt { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 13px; color: var(--fg2); white-space: nowrap; }
   .dt svg { color: var(--fg3); }
-  .tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 7px; border-radius: 2px; font: 700 9.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
-         color: #1a1000; background: var(--acc); box-shadow: 0 0 14px rgba(var(--accRGB), .5); }
-  .tag::before { content: ""; width: 5px; height: 5px; background: #1a1000; animation: blink 1.2s steps(2) infinite; }
+  .tag { display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 2px; font: 700 9.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
+         color: #1a1000; background: var(--acc); }
   .pill { position: relative; flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border-radius: 3px; font: 700 12px/1 var(--mono);
           color: var(--fg); background: rgba(0,0,0,.35); border: 1px solid var(--line2); }
   .pill svg { color: var(--acc); }
@@ -208,9 +199,9 @@
   .wk-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .mult { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 3px; font: 800 15px/1 var(--display);
           color: var(--z); background: color-mix(in srgb, var(--z) 14%, transparent); border: 1px solid color-mix(in srgb, var(--z) 40%, transparent); }
-  .mult small { font: 600 10.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg2); }
-  .reset { text-align: right; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--fg2); }
-  .reset b { display: block; margin-top: 5px; font: 800 20px/1 var(--display); letter-spacing: 0; text-transform: none; color: var(--fg); }
+  .mult small { font: 500 12px/1 "Inter", system-ui, sans-serif; color: var(--fg2); }
+  .reset { text-align: right; font-size: 13px; color: var(--fg2); }
+  .reset b { display: block; margin-top: 4px; font: 800 20px/1 var(--display); color: var(--fg); }
   .zones { display: flex; gap: 3px; height: 10px; margin-top: 16px; }
   .zones > div { position: relative; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--z) 18%, transparent); }
   .zones > div > i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--z); box-shadow: 0 0 10px var(--z); transition: width .8s cubic-bezier(.2,.8,.2,1); }
@@ -219,7 +210,7 @@
   .wk-note { margin: 12px 0 0; font-size: 13px; color: var(--fg2); }
   .wk-note b { color: var(--fg); font-weight: 700; }
 
-  .share { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; margin-top: 14px; padding: 13px 16px; cursor: pointer;
+  .share { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; margin-top: 16px; padding: 13px 16px; cursor: pointer;
            font: 800 15px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: #1a1000; border: 0; border-radius: 4px;
            background: linear-gradient(90deg, #ff7a00, var(--acc) 55%, var(--acc2)); box-shadow: 0 8px 24px rgba(var(--accRGB), .3), inset 0 1px 0 rgba(255,255,255,.35);
            transition: transform .12s, box-shadow .2s, filter .2s; }
@@ -236,21 +227,28 @@
   .shot-x { flex: 1; padding: 13px 16px; cursor: pointer; font: 800 15px/1 var(--display); letter-spacing: .06em; text-transform: uppercase;
             color: var(--fg); background: rgba(255,255,255,.06); border: 1px solid var(--line2); border-radius: 4px; }
   .share:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-  .total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line2);
-           font: 500 11px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg2); }
-  .total b { font: 900 italic 26px/1 var(--display); letter-spacing: 0; text-transform: none; color: var(--acc); text-shadow: 0 0 18px rgba(var(--accRGB), .45); white-space: nowrap; }
+  .total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line2);
+           font-size: 14px; color: var(--fg2); }
+  .total b { font: 900 italic 26px/1 var(--display); color: var(--acc); white-space: nowrap; }
 
-  .notecard { position: relative; isolation: isolate; display: flex; gap: 11px; align-items: flex-start; padding: 13px 15px; border-radius: 4px;
-              background: rgba(17,20,26,.6); border: 1px solid var(--line); border-left: 2px solid rgba(var(--accRGB), .6);
+  /* примечание свёрнуто в одну строку «Как считается», раскрывается по нажатию */
+  .notecard { position: relative; isolation: isolate; display: block; padding: 0; border-radius: 4px;
+              background: rgba(17,20,26,.6); border: 1px solid var(--line);
               animation: rise .55s .2s cubic-bezier(.2,.8,.2,1) both; }
-  .notecard svg { flex: none; margin-top: 1px; color: var(--acc); }
-  .note { margin: 0; font-size: 12px; line-height: 1.55; color: var(--fg3); }
+  .notecard summary { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; list-style: none;
+                      font-size: 13px; color: var(--fg2); user-select: none; }
+  .notecard summary::-webkit-details-marker { display: none; }
+  .notecard summary svg { flex: none; color: var(--acc); }
+  .notecard summary::after { content: ""; width: 7px; height: 7px; margin-left: auto; border: solid var(--fg3); border-width: 0 1.5px 1.5px 0;
+                             transform: rotate(45deg) translateY(-2px); transition: transform .2s; }
+  .notecard[open] summary::after { transform: rotate(225deg) translateY(-2px); }
+  .note { margin: 0; padding: 0 16px 14px 42px; font-size: 12.5px; line-height: 1.55; color: var(--fg3); }
 
   @media (hover: hover) {
     .card:hover { border-color: var(--line2); }
     .share:hover { filter: brightness(1.08); box-shadow: 0 10px 30px rgba(var(--accRGB), .45), inset 0 1px 0 rgba(255,255,255,.35); }
     .tile, .item, .inp, .ddbtn, .dditem { transition: box-shadow .2s, border-color .2s, background .2s, transform .15s; }
-    .tile:hover { border-color: rgba(var(--g), .45); box-shadow: 0 0 24px -6px rgb(var(--g)); }
+    .tile:hover { border-color: var(--line2); }
     .item:hover { transform: translateX(3px); box-shadow: 0 0 26px -8px var(--c); }
     .inp:hover:not(:focus) { border-color: rgba(var(--accRGB), .45); }
     .ddbtn:hover { border-color: rgba(var(--accRGB), .55); background: linear-gradient(90deg, rgba(var(--accRGB), .1), rgba(255,255,255,.02)); }
@@ -288,7 +286,7 @@
     <div class="ch"><b>01</b>Параметры</div>
     <div class="lab"><i data-ic="bolt" data-s="15"></i><label for="g">XP за игру</label></div>
     <input class="inp" id="g" type="number" inputmode="decimal" step="any" min="1">
-    <div class="hint">сколько XP за игру ты получаешь после штрафа (молния XP Overload на нике)</div>
+    <div class="hint">с учётом штрафа XP Overload (молния у ника)</div>
 
     <div class="row">
       <div>
@@ -311,10 +309,10 @@
   <section class="card" id="week"></section>
   <section class="card" id="levels"></section>
 
-  <div class="notecard">
-    <i data-ic="info" data-s="16"></i>
+  <details class="notecard">
+    <summary><i data-ic="info" data-s="16"></i>Как считается</summary>
     <p class="note" id="note"></p>
-  </div>
+  </details>
 </div>
 <div class="ddlist" id="ddList" hidden></div>
 
@@ -545,7 +543,10 @@
     return isFinite(v) ? v : fallback;
   }
   function when(ms) {
-    return new Date(ms).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    // коротко, чтобы влезало в одну строку: «24 окт · 02:10»
+    var d = new Date(ms);
+    var mon = d.toLocaleString('ru-RU', { month: 'short' }).replace('.', '');
+    return d.getDate() + ' ' + mon + ' · ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   }
   function inText(ms, now) {
     var d = (ms - now) / XpCalc.DAY;
